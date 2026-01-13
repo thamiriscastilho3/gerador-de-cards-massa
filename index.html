@@ -3,135 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cards - Layout Otimizado</title>
+    <title>Gerador de Cards - Ciclo 2 Boticário</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         :root { --cor-boticario: #00a775; --bg-painel: #ffffff; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; overflow: hidden; }
         
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            margin: 0; 
-            background: #f0f2f5; 
-            height: 100vh; 
-            display: flex; 
-            overflow: hidden; /* Impede a rolagem do corpo principal */
-        }
-
-        /* PAINEL DE CONTROLE ESQUERDO */
-        #controls { 
-            width: 400px; 
-            background: var(--bg-painel); 
-            border-right: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
-            z-index: 100;
-        }
-
+        #controls { width: 420px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
         .header-controls { padding: 20px; border-bottom: 1px solid #eee; }
-        .scroll-content { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            scrollbar-width: thin;
-        }
-
-        /* ÁREA DE VISUALIZAÇÃO DO CARD */
-        #preview-area { 
-            flex: 1; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            padding: 40px; 
-            overflow-y: auto; /* Rolagem apenas no card se necessário */
-            background: #e4e6e9;
-        }
-
-        /* CARD CONFIG (1080x1350) - Escala de 0.5x para caber na tela */
+        .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        #preview-area { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; background: #e4e6e9; overflow: auto; }
+        
+        /* CARD CONFIG (1080x1350) */
         #card-canvas {
-            width: 540px; 
-            height: 675px;
-            position: relative;
+            width: 1080px; height: 1350px; position: relative;
             background-image: url('https://raw.githubusercontent.com/thamiriscastilho3/gerador-de-cards-massa/main/assets/background-card.png.png');
-            background-size: 100% 100%;
-            overflow: hidden; 
-            flex-shrink: 0; 
-            background-color: #000;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            background-size: 100% 100%; background-position: center; overflow: hidden; flex-shrink: 0; 
+            transform: scale(0.35); transform-origin: center center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            background-color: #ffffff; /* Força fundo branco para evitar cinza */
         }
 
-        /* Elementos Internos do Card */
-        #header-area { position: absolute; top: 40px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; }
-        #titulo-principal { font-size: 26px; font-weight: 900; margin: 0; text-transform: uppercase; }
-        #subtitulo { font-size: 14px; font-weight: 300; margin: 2px 0; }
-
-        #produto-img-container {
-            position: absolute; top: 150px; left: 20px;
-            width: 350px; height: 400px;
-            display: flex; align-items: center; justify-content: center; z-index: 5;
-        }
+        #header-area { position: absolute; top: 120px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; }
+        #titulo-principal { font-size: 60px; font-weight: 900; margin: 0; text-transform: uppercase; }
+        #subtitulo { font-size: 32px; font-weight: 300; margin: 10px 0; }
+        
+        #produto-img-container { position: absolute; top: 350px; left: 100px; width: 700px; height: 700px; display: flex; align-items: center; justify-content: center; z-index: 5; }
         #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        #bloco-informativo {
-            position: absolute; top: 50%; right: 25px; transform: translateY(-50%);
-            background-color: var(--cor-boticario); color: white;
-            padding: 15px; border-radius: 8px; width: 185px; z-index: 20;
+        
+        #bloco-informativo { position: absolute; top: 50%; right: 80px; transform: translateY(-50%); background-color: var(--cor-boticario); color: white; padding: 40px; border-radius: 20px; width: 400px; z-index: 20; }
+        #display-compre { font-size: 85px; font-weight: 900; line-height: 1; }
+        #display-compre span { font-size: 35px; vertical-align: top; margin-right: 5px; }
+        #display-venda { font-size: 28px; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 20px; margin-bottom: 20px; }
+        #info-detalhes { font-size: 20px; font-weight: 700; text-transform: uppercase; }
+        
+        #texto-legal { 
+            position: absolute; bottom: 40px; left: 100px; right: 100px; 
+            font-size: 18px; color: #fff; text-align: center; line-height: 1.2; 
+            text-shadow: 2px 2px 4px #000; z-index: 30;
         }
-        #display-compre { font-size: 34px; font-weight: 900; line-height: 1; }
-        #display-compre span { font-size: 16px; vertical-align: top; }
-        #display-venda { font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px; margin-bottom: 8px; }
-        #info-detalhes { font-size: 9px; font-weight: 700; text-transform: uppercase; }
-        #texto-legal { position: absolute; bottom: 15px; left: 40px; right: 40px; font-size: 7.5px; color: #fff; text-align: center; line-height: 1.2; text-shadow: 1px 1px 2px #000;}
 
-        /* Estilização da UI */
         .step { display: none; }
         .step.active { display: block; }
-        .edit-group { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #eef0f2; }
-        .control-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: #444; }
-        input[type="range"] { flex: 1; accent-color: var(--cor-boticario); }
+        .edit-group { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .control-row { margin-bottom: 10px; font-size: 13px; font-weight: bold; color: #333; }
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; }
         .btn-primary { background: var(--cor-boticario); color: white; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { border: 1px solid #eee; padding: 6px; text-align: left; }
-        .input-text-url { width: 100%; font-size: 10px; margin-bottom: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .input-url { width: 100%; padding: 6px; font-size: 11px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
     </style>
 </head>
 <body>
 
     <div id="controls">
         <div class="header-controls">
-            <h2 style="margin:0; color:var(--cor-boticario); font-size: 1.2rem;">Gerador de Cards Massa</h2>
+            <h2 style="margin:0; color:var(--cor-boticario);">Gerador Ciclo 2</h2>
         </div>
-
         <div class="scroll-content">
             <div id="step-1" class="step active">
-                <p>Para começar, suba sua planilha CSV:</p>
-                <input type="file" id="csv-file" accept=".csv" style="width: 100%;">
+                <p>Suba a planilha <b>Ciclo 2 Boticário</b>:</p>
+                <input type="file" id="csv-file" accept=".csv">
             </div>
-
             <div id="step-2" class="step">
-                <button class="btn btn-primary" onclick="baixarZip()">BAIXAR TODOS (.ZIP)</button>
+                <div class="edit-group">
+                    <label><b>Formato de Download:</b></label>
+                    <select id="export-format" style="width:100%; padding:8px; margin:10px 0; border-radius:4px;">
+                        <option value="pdf">PDF Único (Sem Filtro)</option>
+                        <option value="png">Imagens Individuais (.ZIP)</option>
+                    </select>
+                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR</button>
+                </div>
+                
                 <button class="btn" style="background:#eee;" onclick="location.reload()">REINICIAR</button>
                 
                 <div class="edit-group">
-                    <h4 style="margin-top:0;">Ajustes da Imagem</h4>
-                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.4" max="2.5" step="0.1" value="1" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Eixo X: <input type="range" id="posX-img" min="-200" max="200" step="1" value="0" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Eixo Y: <input type="range" id="posY-img" min="-200" max="200" step="1" value="0" oninput="aplicarAjustes()"></div>
+                    <h4 style="margin-top:0; color:var(--cor-boticario);">Ajustes da Imagem</h4>
+                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.5" max="3" step="0.1" value="1" oninput="aplicarAjustes()" style="width:100%"></div>
+                    <div class="control-row">Eixo X: <input type="range" id="posX-img" min="-400" max="400" step="1" value="0" oninput="aplicarAjustes()" style="width:100%"></div>
+                    <div class="control-row">Eixo Y: <input type="range" id="posY-img" min="-400" max="400" step="1" value="0" oninput="aplicarAjustes()" style="width:100%"></div>
                 </div>
 
                 <div class="edit-group">
-                    <h4 style="margin-top:0;">Ajustes de Texto</h4>
-                    <div class="control-row">Título (Y): <input type="range" id="posY-titulo" min="10" max="200" step="1" value="40" oninput="aplicarAjustes()"></div>
+                    <h4 style="margin-top:0; color:var(--cor-boticario);">Ajustes do Título</h4>
+                    <div class="control-row">Posição Vertical (Y): <input type="range" id="posY-titulo" min="10" max="400" step="1" value="120" oninput="aplicarAjustes()" style="width:100%"></div>
                 </div>
 
-                <h4 style="font-size: 12px; color: #666;">Lista de Produtos</h4>
+                <div class="edit-group">
+                    <h4 style="margin-top:0; color:var(--cor-boticario);">Ajuste do Texto Legal</h4>
+                    <div class="control-row">Posição Vertical (Y): <input type="range" id="posY-legal" min="10" max="250" step="1" value="40" oninput="aplicarAjustes()" style="width:100%"></div>
+                    <div class="control-row">Tamanho da Fonte: <input type="range" id="size-legal" min="10" max="30" step="1" value="18" oninput="aplicarAjustes()" style="width:100%"></div>
+                </div>
+
+                <h4 style="margin-bottom:5px;">Lista de Produtos</h4>
                 <table id="data-table">
-                    <thead><tr><th>SKU</th><th>Imagem (URL ou Arq)</th><th>Ver</th></tr></thead>
+                    <thead><tr style="font-size:11px; text-align:left;"><th>SKU</th><th>Img (Link ou Upload)</th><th>Ver</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -146,7 +118,7 @@
             </div>
             <div id="produto-img-container"><img id="produto-img" crossOrigin="anonymous" src=""></div>
             <div id="bloco-informativo">
-                <div style="font-size: 10px; font-weight: bold; opacity: 0.9;">COMPRE POR:</div>
+                <div style="font-size: 20px; font-weight: bold;">COMPRE POR:</div>
                 <div id="display-compre"><span>R$</span>00,00</div>
                 <div id="display-venda">Venda por: R$ 00,00</div>
                 <div id="info-detalhes"><span id="display-sku">00000</span> | <span id="display-nome">PRODUTO</span></div>
@@ -156,6 +128,7 @@
     </div>
 
     <script>
+        const { jsPDF } = window.jspdf;
         let planilha = [];
 
         document.getElementById('csv-file').addEventListener('change', function(e) {
@@ -177,12 +150,12 @@
             planilha.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row['SKU'] || index}</td>
+                    <td style="font-size:11px;">${row['SKU'] || index}</td>
                     <td>
-                        <input type="text" class="input-text-url" placeholder="Link" onchange="vincularLink(this.value, ${index})">
-                        <input type="file" onchange="carregarArquivo(event, ${index})" style="font-size: 9px;">
+                        <input type="text" class="input-url" placeholder="Link da Imagem" onchange="vincularLink(this.value, ${index})">
+                        <input type="file" style="font-size:10px;" onchange="carregarArquivo(event, ${index})">
                     </td>
-                    <td><button onclick="atualizarCard(${index})" style="cursor:pointer">👁️</button></td>
+                    <td><button onclick="atualizarCard(${index})" style="cursor:pointer; border:none; background:none; font-size:16px;">👁️</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -199,13 +172,12 @@
             const item = planilha[index];
             document.getElementById('titulo-principal').innerText = item['Título Principal'] || '';
             document.getElementById('subtitulo').innerText = item['SUBTÍTULO'] || '';
-            let compre = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
-            document.getElementById('display-compre').innerHTML = `<span>R$</span>${compre}`;
+            let compreVal = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
+            document.getElementById('display-compre').innerHTML = `<span>R$</span>${compreVal}`;
             document.getElementById('display-venda').innerText = `Venda por: ${item['VENDA POR'] || 'R$ 0,00'}`;
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
-            
             const img = document.getElementById('produto-img');
             img.src = item.imgData || '';
             img.style.display = item.imgData ? 'block' : 'none';
@@ -219,28 +191,72 @@
             const y = document.getElementById('posY-img').value;
             img.style.transform = `scale(${zoom}) translate(${x}px, ${y}px)`;
             document.getElementById('header-area').style.top = `${document.getElementById('posY-titulo').value}px`;
+            const legal = document.getElementById('texto-legal');
+            legal.style.bottom = `${document.getElementById('posY-legal').value}px`;
+            legal.style.fontSize = `${document.getElementById('size-legal').value}px`;
         }
 
-        async function baixarZip() {
-            const zip = new JSZip();
-            const btn = document.querySelector('.btn-primary');
-            const originalText = btn.innerText;
-            btn.innerText = "GERANDO...";
+        async function baixarArquivos() {
+            const format = document.getElementById('export-format').value;
+            const btn = document.getElementById('btn-download');
+            const cardElement = document.getElementById('card-canvas');
+            btn.innerText = "LIMPANDO FILTRO E GERANDO...";
             btn.disabled = true;
+
+            const originalTransform = cardElement.style.transform;
+            const originalShadow = cardElement.style.boxShadow;
+            
+            // REMOÇÃO DO FILTRO CINZA: Resetamos escala e sombra antes da captura
+            cardElement.style.transform = "none";
+            cardElement.style.boxShadow = "none";
+
+            let pdf;
+            let zip;
+
+            if (format === 'pdf') {
+                pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1350] });
+            } else {
+                zip = new JSZip();
+            }
 
             for (let i = 0; i < planilha.length; i++) {
                 atualizarCard(i);
-                await new Promise(r => setTimeout(r, 600)); // Espera carregar imagem
-                const canvas = await html2canvas(document.getElementById('card-canvas'), { scale: 2, useCORS: true });
-                zip.file(`card_${planilha[i].SKU || i}.png`, canvas.toDataURL("image/png").split(',')[1], {base64: true});
+                await new Promise(r => setTimeout(r, 850));
+
+                const canvas = await html2canvas(cardElement, { 
+                    scale: 1, 
+                    useCORS: true,
+                    width: 1080,
+                    height: 1350,
+                    backgroundColor: "#ffffff", // Garante fundo limpo
+                    logging: false
+                });
+
+                if (format === 'pdf') {
+                    // Usamos PNG dentro do PDF para evitar artefatos de compressão JPEG (que causam o cinza)
+                    const imgData = canvas.toDataURL("image/png");
+                    if (i > 0) pdf.addPage([1080, 1350], 'p');
+                    pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1350);
+                } else {
+                    const imgData = canvas.toDataURL("image/png").split(',')[1];
+                    zip.file(`card_${planilha[i].SKU || i}.png`, imgData, {base64: true});
+                }
             }
 
-            zip.generateAsync({type:"blob"}).then(c => {
-                saveAs(c, "cards_boticario_producao.zip");
-                btn.innerText = originalText;
-                btn.disabled = false;
-            });
+            cardElement.style.transform = originalTransform;
+            cardElement.style.boxShadow = originalShadow;
+
+            if (format === 'pdf') {
+                pdf.save("cards_boticario_final.pdf");
+            } else {
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, "cards_boticario_png.zip");
+            }
+
+            btn.innerText = "GERAR E BAIXAR";
+            btn.disabled = false;
         }
     </script>
 </body>
 </html>
+
