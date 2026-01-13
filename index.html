@@ -3,269 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cards - Ciclo 2 Boticário</title>
+    <title>Gerador de Cards - Layout Otimizado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <style>
-        :root {
-            --cor-primaria: #ab2427; /* Tom de vermelho do modelo */
-            --cor-texto-legal: #666;
+        :root { --cor-boticario: #00a775; --bg-painel: #ffffff; }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            margin: 0; 
+            background: #f0f2f5; 
+            height: 100vh; 
+            display: flex; 
+            overflow: hidden; /* Impede a rolagem do corpo principal */
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f0f0; }
-        
-        /* Layout de Trabalho */
-        .container-criacao { display: flex; gap: 40px; width: 95%; max-width: 1800px; }
-        #formulario-entrada { flex: 1; padding: 25px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .step { display: none; }
-        .step.active { display: block; }
-        
-        /* Tabela de Dados */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #f8f8f8; }
+        /* PAINEL DE CONTROLE ESQUERDO */
+        #controls { 
+            width: 400px; 
+            background: var(--bg-painel); 
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
 
-        /* Estilização do Card (1080x1350) */
-        #card-preview {
-            width: 540px; /* Metade de 1080 para visualização */
-            height: 675px; /* Metade de 1350 para visualização */
+        .header-controls { padding: 20px; border-bottom: 1px solid #eee; }
+        .scroll-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            scrollbar-width: thin;
+        }
+
+        /* ÁREA DE VISUALIZAÇÃO DO CARD */
+        #preview-area { 
+            flex: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding: 40px; 
+            overflow-y: auto; /* Rolagem apenas no card se necessário */
+            background: #e4e6e9;
+        }
+
+        /* CARD CONFIG (1080x1350) - Escala de 0.5x para caber na tela */
+        #card-canvas {
+            width: 540px; 
+            height: 675px;
             position: relative;
-            overflow: hidden;
             background-image: url('https://raw.githubusercontent.com/thamiriscastilho3/gerador-de-cards-massa/main/assets/background-card.png.png');
             background-size: 100% 100%;
-            background-color: #fff;
-            flex-shrink: 0;
+            overflow: hidden; 
+            flex-shrink: 0; 
+            background-color: #000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
-        /* Títulos e Subtítulos */
-        #card-header {
-            position: absolute;
-            top: 60px;
-            width: 100%;
-            text-align: center;
-            z-index: 10;
-        }
-        #card-titulo { color: #fff; font-size: 28px; font-weight: 800; margin: 0; text-transform: uppercase; }
-        #card-subtitulo { color: #fff; font-size: 16px; font-weight: 400; margin-top: 5px; }
+        /* Elementos Internos do Card */
+        #header-area { position: absolute; top: 40px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; }
+        #titulo-principal { font-size: 26px; font-weight: 900; margin: 0; text-transform: uppercase; }
+        #subtitulo { font-size: 14px; font-weight: 300; margin: 2px 0; }
 
-        /* Selo de Faixa */
-        #card-faixa {
-            position: absolute;
-            top: 180px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #fff;
-            color: var(--cor-primaria);
-            padding: 5px 20px;
-            border-radius: 20px;
-            font-weight: 900;
-            font-size: 14px;
-            z-index: 10;
+        #produto-img-container {
+            position: absolute; top: 150px; left: 20px;
+            width: 350px; height: 400px;
+            display: flex; align-items: center; justify-content: center; z-index: 5;
         }
+        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* Imagem do Produto */
-        #card-imagem-area {
-            position: absolute;
-            top: 220px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 350px;
-            height: 350px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
+        #bloco-informativo {
+            position: absolute; top: 50%; right: 25px; transform: translateY(-50%);
+            background-color: var(--cor-boticario); color: white;
+            padding: 15px; border-radius: 8px; width: 185px; z-index: 20;
         }
-        #card-imagem { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        #display-compre { font-size: 34px; font-weight: 900; line-height: 1; }
+        #display-compre span { font-size: 16px; vertical-align: top; }
+        #display-venda { font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px; margin-bottom: 8px; }
+        #info-detalhes { font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        #texto-legal { position: absolute; bottom: 15px; left: 40px; right: 40px; font-size: 7.5px; color: #fff; text-align: center; line-height: 1.2; text-shadow: 1px 1px 2px #000;}
 
-        /* Container de Preços */
-        .precos-box {
-            position: absolute;
-            bottom: 160px;
-            right: 40px;
-            text-align: right;
-            color: #fff;
-            z-index: 10;
-        }
-        .venda-por { font-size: 14px; margin-bottom: -5px; opacity: 0.9; }
-        .valor-promocionado { font-size: 22px; font-weight: 300; text-decoration: line-through; margin-bottom: 5px; }
-        .compre-por-label { font-size: 18px; font-weight: 800; color: #fff; }
-        .valor-principal { font-size: 55px; font-weight: 900; line-height: 1; }
-        .valor-principal span { font-size: 20px; }
-
-        /* Rodapé com Informações do Produto */
-        #card-footer {
-            position: absolute;
-            bottom: 60px;
-            width: 100%;
-            background: var(--cor-primaria);
-            padding: 10px 0;
-            color: #fff;
-            text-align: center;
-        }
-        #card-sku { font-size: 12px; margin: 0; }
-        #card-nome-produto { font-size: 14px; font-weight: 700; margin: 0; padding: 0 20px; }
-
-        /* Texto Legal */
-        #card-legal {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            font-size: 8px;
-            color: var(--cor-texto-legal);
-            padding: 0 30px;
-            text-align: center;
-            line-height: 1.1;
-        }
-
-        .download-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        /* Estilização da UI */
+        .step { display: none; }
+        .step.active { display: block; }
+        .edit-group { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #eef0f2; }
+        .control-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: #444; }
+        input[type="range"] { flex: 1; accent-color: var(--cor-boticario); }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; }
+        .btn-primary { background: var(--cor-boticario); color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #eee; padding: 6px; text-align: left; }
+        .input-text-url { width: 100%; font-size: 10px; margin-bottom: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div class="container-criacao">
-        <div id="formulario-entrada">
-            <h1>Gerador de Cards Ciclo 2</h1>
-            
+    <div id="controls">
+        <div class="header-controls">
+            <h2 style="margin:0; color:var(--cor-boticario); font-size: 1.2rem;">Gerador de Cards Massa</h2>
+        </div>
+
+        <div class="scroll-content">
             <div id="step-1" class="step active">
-                <h3>Passo 1: Carregar Planilha CSV</h3>
-                <input type="file" id="input-csv" accept=".csv">
-                <p><small>Certifique-se que as colunas são: Título Principal, SUBTÍTULO, FAIXA, VENDA POR, valor promocionado, COMPRE POR, SKU, Nome do Produto, (TEXTO LEGAL)</small></p>
+                <p>Para começar, suba sua planilha CSV:</p>
+                <input type="file" id="csv-file" accept=".csv" style="width: 100%;">
             </div>
 
             <div id="step-2" class="step">
-                <h3>Passo 2: Imagens e Gerenciamento</h3>
-                <button onclick="gerarTodosCards()" class="download-btn">Baixar Todos em ZIP (1080x1350)</button>
-                <div style="overflow-y: auto; max-height: 400px;">
-                    <table id="data-table">
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th>SKU</th>
-                                <th>Imagem</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <button class="btn btn-primary" onclick="baixarZip()">BAIXAR TODOS (.ZIP)</button>
+                <button class="btn" style="background:#eee;" onclick="location.reload()">REINICIAR</button>
+                
+                <div class="edit-group">
+                    <h4 style="margin-top:0;">Ajustes da Imagem</h4>
+                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.4" max="2.5" step="0.1" value="1" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Eixo X: <input type="range" id="posX-img" min="-200" max="200" step="1" value="0" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Eixo Y: <input type="range" id="posY-img" min="-200" max="200" step="1" value="0" oninput="aplicarAjustes()"></div>
                 </div>
+
+                <div class="edit-group">
+                    <h4 style="margin-top:0;">Ajustes de Texto</h4>
+                    <div class="control-row">Título (Y): <input type="range" id="posY-titulo" min="10" max="200" step="1" value="40" oninput="aplicarAjustes()"></div>
+                </div>
+
+                <h4 style="font-size: 12px; color: #666;">Lista de Produtos</h4>
+                <table id="data-table">
+                    <thead><tr><th>SKU</th><th>Imagem (URL ou Arq)</th><th>Ver</th></tr></thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
+    </div>
 
-        <div id="card-preview">
-            <div id="card-header">
-                <p id="card-titulo">TÍTULO</p>
-                <p id="card-subtitulo">SUBTÍTULO</p>
+    <div id="preview-area">
+        <div id="card-canvas">
+            <div id="header-area">
+                <p id="titulo-principal">TÍTULO</p>
+                <p id="subtitulo">SUBTÍTULO</p>
             </div>
-
-            <div id="card-faixa">FAIXA</div>
-
-            <div id="card-imagem-area">
-                <div id="card-imagem"></div>
+            <div id="produto-img-container"><img id="produto-img" crossOrigin="anonymous" src=""></div>
+            <div id="bloco-informativo">
+                <div style="font-size: 10px; font-weight: bold; opacity: 0.9;">COMPRE POR:</div>
+                <div id="display-compre"><span>R$</span>00,00</div>
+                <div id="display-venda">Venda por: R$ 00,00</div>
+                <div id="info-detalhes"><span id="display-sku">00000</span> | <span id="display-nome">PRODUTO</span></div>
             </div>
-
-            <div class="precos-box">
-                <div class="venda-por">Venda por:</div>
-                <div id="valor-promocionado" class="valor-promocionado">R$ 0,00</div>
-                <div class="compre-por-label">COMPRE POR:</div>
-                <div id="valor-principal" class="valor-principal"><span>R$</span> 00,00</div>
-            </div>
-
-            <div id="card-footer">
-                <p id="card-sku">SKU 00000</p>
-                <p id="card-nome-produto">NOME DO PRODUTO EXEMPLO</p>
-            </div>
-
-            <div id="card-legal">Texto legal informativo aqui...</div>
+            <div id="texto-legal"></div>
         </div>
     </div>
 
     <script>
-        let dadosCards = [];
+        let planilha = [];
 
-        document.getElementById('input-csv').addEventListener('change', function(e) {
+        document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
-                header: true,
-                skipEmptyLines: true,
+                header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    dadosCards = results.data;
-                    renderizarTabela();
+                    planilha = results.data;
+                    renderTabela();
                     document.getElementById('step-1').classList.remove('active');
                     document.getElementById('step-2').classList.add('active');
-                    atualizarPreview(0);
+                    atualizarCard(0);
                 }
             });
         });
 
-        function renderizarTabela() {
+        function renderTabela() {
             const tbody = document.querySelector('#data-table tbody');
             tbody.innerHTML = '';
-            dadosCards.forEach((item, index) => {
+            planilha.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${item['Nome do Produto']}</td>
-                    <td>${item['SKU']}</td>
-                    <td><input type="file" onchange="carregarImagem(event, ${index})"></td>
-                    <td><button onclick="atualizarPreview(${index})">Ver</button></td>
+                    <td>${row['SKU'] || index}</td>
+                    <td>
+                        <input type="text" class="input-text-url" placeholder="Link" onchange="vincularLink(this.value, ${index})">
+                        <input type="file" onchange="carregarArquivo(event, ${index})" style="font-size: 9px;">
+                    </td>
+                    <td><button onclick="atualizarCard(${index})" style="cursor:pointer">👁️</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function carregarImagem(event, index) {
-            const file = event.target.files[0];
+        function vincularLink(url, index) { planilha[index].imgData = url; atualizarCard(index); }
+        function carregarArquivo(event, index) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                dadosCards[index].imagemData = e.target.result;
-                atualizarPreview(index);
-            };
-            reader.readAsDataURL(file);
+            reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
+            reader.readAsDataURL(event.target.files[0]);
         }
 
-        function atualizarPreview(index) {
-            const item = dadosCards[index];
-            document.getElementById('card-titulo').innerText = item['Título Principal'] || '';
-            document.getElementById('card-subtitulo').innerText = item['SUBTÍTULO'] || '';
-            document.getElementById('card-faixa').innerText = item['FAIXA'] || '';
-            document.getElementById('valor-promocionado').innerText = item['valor promocionado'] || '';
+        function atualizarCard(index) {
+            const item = planilha[index];
+            document.getElementById('titulo-principal').innerText = item['Título Principal'] || '';
+            document.getElementById('subtitulo').innerText = item['SUBTÍTULO'] || '';
+            let compre = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
+            document.getElementById('display-compre').innerHTML = `<span>R$</span>${compre}`;
+            document.getElementById('display-venda').innerText = `Venda por: ${item['VENDA POR'] || 'R$ 0,00'}`;
+            document.getElementById('display-sku').innerText = item['SKU'] || '';
+            document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
+            document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
             
-            // Tratamento do preço principal
-            let preco = item['COMPRE POR'] || '0,00';
-            preco = preco.replace('R$', '').trim();
-            document.getElementById('valor-principal').innerHTML = `<span>R$</span> ${preco}`;
-            
-            document.getElementById('card-sku').innerText = `SKU ${item['SKU']}`;
-            document.getElementById('card-nome-produto').innerText = item['Nome do Produto'];
-            document.getElementById('card-legal').innerText = item['(TEXTO LEGAL)'] || '';
-            
-            const imgDiv = document.getElementById('card-imagem');
-            imgDiv.style.backgroundImage = item.imagemData ? `url(${item.imagemData})` : 'none';
+            const img = document.getElementById('produto-img');
+            img.src = item.imgData || '';
+            img.style.display = item.imgData ? 'block' : 'none';
+            aplicarAjustes();
         }
 
-        async function gerarTodosCards() {
+        function aplicarAjustes() {
+            const img = document.getElementById('produto-img');
+            const zoom = document.getElementById('zoom-img').value;
+            const x = document.getElementById('posX-img').value;
+            const y = document.getElementById('posY-img').value;
+            img.style.transform = `scale(${zoom}) translate(${x}px, ${y}px)`;
+            document.getElementById('header-area').style.top = `${document.getElementById('posY-titulo').value}px`;
+        }
+
+        async function baixarZip() {
             const zip = new JSZip();
-            const originalScale = 2; // Para chegar nos 1080x1350 (540 * 2)
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = "GERANDO...";
+            btn.disabled = true;
 
-            for (let i = 0; i < dadosCards.length; i++) {
-                atualizarPreview(i);
-                await new Promise(r => setTimeout(r, 100)); // Espera render
-                
-                const canvas = await html2canvas(document.getElementById('card-preview'), {
-                    scale: originalScale,
-                    useCORS: true
-                });
-                
-                const imgData = canvas.toDataURL("image/png").split(',')[1];
-                zip.file(`card_${dadosCards[i].SKU}.png`, imgData, {base64: true});
+            for (let i = 0; i < planilha.length; i++) {
+                atualizarCard(i);
+                await new Promise(r => setTimeout(r, 600)); // Espera carregar imagem
+                const canvas = await html2canvas(document.getElementById('card-canvas'), { scale: 2, useCORS: true });
+                zip.file(`card_${planilha[i].SKU || i}.png`, canvas.toDataURL("image/png").split(',')[1], {base64: true});
             }
 
-            zip.generateAsync({type:"blob"}).then(content => {
-                saveAs(content, "cards_boticario_ciclo2.zip");
+            zip.generateAsync({type:"blob"}).then(c => {
+                saveAs(c, "cards_boticario_producao.zip");
+                btn.innerText = originalText;
+                btn.disabled = false;
             });
         }
     </script>
 </body>
 </html>
+
