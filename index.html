@@ -26,7 +26,7 @@
             background-image: url('https://raw.githubusercontent.com/thamiriscastilho3/gerador-de-cards-massa/main/assets/background-card.png.png');
             background-size: 100% 100%; background-position: center; overflow: hidden; flex-shrink: 0; 
             transform: scale(0.35); transform-origin: center center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            background-color: #ffffff; /* Força fundo branco para evitar cinza */
+            background-color: #000;
         }
 
         #header-area { position: absolute; top: 120px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; }
@@ -75,7 +75,7 @@
                 <div class="edit-group">
                     <label><b>Formato de Download:</b></label>
                     <select id="export-format" style="width:100%; padding:8px; margin:10px 0; border-radius:4px;">
-                        <option value="pdf">PDF Único (Sem Filtro)</option>
+                        <option value="pdf">PDF Único (Multipáginas)</option>
                         <option value="png">Imagens Individuais (.ZIP)</option>
                     </select>
                     <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR</button>
@@ -162,6 +162,7 @@
         }
 
         function vincularLink(url, index) { planilha[index].imgData = url; atualizarCard(index); }
+
         function carregarArquivo(event, index) {
             const reader = new FileReader();
             reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
@@ -178,6 +179,7 @@
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
+            
             const img = document.getElementById('produto-img');
             img.src = item.imgData || '';
             img.style.display = item.imgData ? 'block' : 'none';
@@ -185,12 +187,17 @@
         }
 
         function aplicarAjustes() {
+            // Imagem
             const img = document.getElementById('produto-img');
             const zoom = document.getElementById('zoom-img').value;
             const x = document.getElementById('posX-img').value;
             const y = document.getElementById('posY-img').value;
             img.style.transform = `scale(${zoom}) translate(${x}px, ${y}px)`;
+            
+            // Título
             document.getElementById('header-area').style.top = `${document.getElementById('posY-titulo').value}px`;
+            
+            // Texto Legal
             const legal = document.getElementById('texto-legal');
             legal.style.bottom = `${document.getElementById('posY-legal').value}px`;
             legal.style.fontSize = `${document.getElementById('size-legal').value}px`;
@@ -200,15 +207,11 @@
             const format = document.getElementById('export-format').value;
             const btn = document.getElementById('btn-download');
             const cardElement = document.getElementById('card-canvas');
-            btn.innerText = "LIMPANDO FILTRO E GERANDO...";
+            btn.innerText = "PROCESSANDO...";
             btn.disabled = true;
 
             const originalTransform = cardElement.style.transform;
-            const originalShadow = cardElement.style.boxShadow;
-            
-            // REMOÇÃO DO FILTRO CINZA: Resetamos escala e sombra antes da captura
             cardElement.style.transform = "none";
-            cardElement.style.boxShadow = "none";
 
             let pdf;
             let zip;
@@ -221,22 +224,20 @@
 
             for (let i = 0; i < planilha.length; i++) {
                 atualizarCard(i);
-                await new Promise(r => setTimeout(r, 850));
+                await new Promise(r => setTimeout(r, 800));
 
                 const canvas = await html2canvas(cardElement, { 
                     scale: 1, 
                     useCORS: true,
                     width: 1080,
                     height: 1350,
-                    backgroundColor: "#ffffff", // Garante fundo limpo
                     logging: false
                 });
 
                 if (format === 'pdf') {
-                    // Usamos PNG dentro do PDF para evitar artefatos de compressão JPEG (que causam o cinza)
-                    const imgData = canvas.toDataURL("image/png");
+                    const imgData = canvas.toDataURL("image/jpeg", 0.95);
                     if (i > 0) pdf.addPage([1080, 1350], 'p');
-                    pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1350);
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1350);
                 } else {
                     const imgData = canvas.toDataURL("image/png").split(',')[1];
                     zip.file(`card_${planilha[i].SKU || i}.png`, imgData, {base64: true});
@@ -244,13 +245,12 @@
             }
 
             cardElement.style.transform = originalTransform;
-            cardElement.style.boxShadow = originalShadow;
 
             if (format === 'pdf') {
-                pdf.save("cards_boticario_final.pdf");
+                pdf.save("cards_ciclo2_1080x1350.pdf");
             } else {
                 const content = await zip.generateAsync({type:"blob"});
-                saveAs(content, "cards_boticario_png.zip");
+                saveAs(content, "cards_ciclo2_png.zip");
             }
 
             btn.innerText = "GERAR E BAIXAR";
