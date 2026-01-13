@@ -14,7 +14,7 @@
         :root { --cor-boticario: #00a775; --bg-painel: #ffffff; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; overflow: hidden; }
         
-        #controls { width: 450px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
+        #controls { width: 500px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
         .header-controls { padding: 15px 20px; border-bottom: 1px solid #eee; background: #fafafa; }
         .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
         
@@ -35,10 +35,9 @@
         #produto-img-container { position: absolute; top: 350px; left: 50%; transform: translateX(-50%); width: 750px; height: 750px; display: flex; align-items: center; justify-content: center; z-index: 5; }
         #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        /* BLOCO CORRIGIDO: Removido box-shadow que causava a marca cinza */
         #bloco-informativo { 
             position: absolute; top: 50%; right: 80px; transform: translateY(-50%); 
-            background-color: #00a775; /* Cor sólida */
+            background-color: #00a775; 
             color: white; padding: 40px; border-radius: 20px; width: 400px; z-index: 20;
             border: 1px solid rgba(255,255,255,0.2);
         }
@@ -64,8 +63,10 @@
         .btn-primary { background: var(--cor-boticario); color: white; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        td { padding: 8px 4px; border-bottom: 1px solid #eee; }
+        th { background: #f0f0f0; padding: 8px; text-align: left; }
+        td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .view-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .url-input { width: 100%; padding: 4px; font-size: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -85,7 +86,7 @@
                 <div class="edit-group">
                     <h4>Exportação</h4>
                     <select id="export-format" style="width:100%; padding:8px; margin-bottom:10px;">
-                        <option value="pdf">PDF Único (Corrigido)</option>
+                        <option value="pdf">PDF Único</option>
                         <option value="png">Imagens ZIP (PNG)</option>
                     </select>
                     <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR</button>
@@ -119,7 +120,7 @@
                 </div>
 
                 <table id="data-table">
-                    <thead><tr><th>SKU</th><th>Foto</th><th>Ver</th></tr></thead>
+                    <thead><tr><th>SKU</th><th>Foto (Upload ou Link)</th><th>Ver</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -167,15 +168,32 @@
             tbody.innerHTML = '';
             planilha.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${row['SKU'] || index}</td><td><input type="file" onchange="carregarArquivo(event, ${index})"></td><td><button class="view-btn" onclick="atualizarCard(${index})">👁️</button></td>`;
+                tr.innerHTML = `
+                    <td>${row['SKU'] || index}</td>
+                    <td>
+                        <input type="file" onchange="carregarArquivo(event, ${index})">
+                        <input type="text" class="url-input" placeholder="Ou cole o link da imagem aqui" onchange="carregarURL(this.value, ${index})">
+                    </td>
+                    <td><button class="view-btn" onclick="atualizarCard(${index})">👁️</button></td>
+                `;
                 tbody.appendChild(tr);
             });
         }
 
         function carregarArquivo(event, index) {
             const reader = new FileReader();
-            reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
+            reader.onload = (e) => { 
+                planilha[index].imgData = e.target.result; 
+                atualizarCard(index); 
+            };
             reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function carregarURL(url, index) {
+            if(url.trim() !== "") {
+                planilha[index].imgData = url.trim();
+                atualizarCard(index);
+            }
         }
 
         function atualizarCard(index) {
@@ -188,9 +206,17 @@
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
+            
             const img = document.getElementById('produto-img');
             img.src = item.imgData || '';
-            img.style.display = item.imgData ? 'block' : 'none';
+            
+            // Tratamento para exibir ou não a imagem
+            if(item.imgData) {
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+            
             aplicarAjustes();
         }
 
@@ -200,7 +226,10 @@
             document.getElementById('subtitulo').style.fontSize = document.getElementById('size-subtitulo').value + "px";
             
             const img = document.getElementById('produto-img');
-            img.style.transform = `scale(${document.getElementById('zoom-img').value}) translate(${document.getElementById('posX-img').value}px, ${document.getElementById('posY-img').value}px)`;
+            const zoom = document.getElementById('zoom-img').value;
+            const px = document.getElementById('posX-img').value;
+            const py = document.getElementById('posY-img').value;
+            img.style.transform = `scale(${zoom}) translate(${px}px, ${py}px)`;
             
             const bx = document.getElementById('posX-bloco').value;
             const by = document.getElementById('posY-bloco').value;
@@ -230,14 +259,15 @@
 
             for (let i = 0; i < planilha.length; i++) {
                 atualizarCard(i);
-                await new Promise(r => setTimeout(r, 500)); 
+                // Espera um pouco mais para garantir que a imagem (especialmente via URL) carregou
+                await new Promise(r => setTimeout(r, 800)); 
 
                 const canvas = await html2canvas(card, { 
                     scale: 1, 
                     useCORS: true, 
                     width: 1080, 
                     height: 1350,
-                    backgroundColor: null, // Evita fundos cinzas automáticos
+                    backgroundColor: null,
                     logging: false
                 });
 
@@ -252,10 +282,10 @@
             }
 
             wrap.style.transform = originalTransform;
-            if (format === 'pdf') pdf.save("Cards_Limpos.pdf");
+            if (format === 'pdf') pdf.save("Cards_Ciclo2.pdf");
             else {
                 const content = await zip.generateAsync({type:"blob"});
-                saveAs(content, "Cards_Limpos.zip");
+                saveAs(content, "Cards_Ciclo2.zip");
             }
             btn.innerText = "GERAR E BAIXAR";
             btn.disabled = false;
@@ -263,4 +293,5 @@
     </script>
 </body>
 </html>
+
 
