@@ -3,604 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Card em Massa - Padrão Fixo</title>
+    <title>Gerador de Cards - Ciclo 2 Boticário</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <style>
-        /* ========================================================= */
-        /* === ESTILOS GERAIS E DO FLUXO DE TRABALHO ================ */
-        /* ========================================================= */
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f4f9; }
-        .container-criacao { display: flex; gap: 40px; width: 90%; max-width: 1700px; margin-bottom: 40px; }
-        #formulario-entrada { flex: 1; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); min-width: 400px; }
-        input { display: block; width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .download-btn, #download-template { border: none; cursor: pointer; font-size: 1.2em; padding: 10px; border-radius: 4px; margin-bottom: 15px; text-decoration: none; display: block; width: 100%; text-align: center; }
-        .download-btn { background-color: #2ECC71; color: white; }
-        .download-btn:hover { background-color: #27AE60; }
-        #download-template { background-color: #3498DB; color: white; }
-        #download-template:hover { background-color: #2980B9; }
+        :root {
+            --cor-primaria: #ab2427; /* Tom de vermelho do modelo */
+            --cor-texto-legal: #666;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f0f0; }
+        
+        /* Layout de Trabalho */
+        .container-criacao { display: flex; gap: 40px; width: 95%; max-width: 1800px; }
+        #formulario-entrada { flex: 1; padding: 25px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .step { display: none; }
         .step.active { display: block; }
-        #data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        #data-table th, #data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.8em; }
-        #data-table th { background-color: #f2f2f2; }
-        .image-cell input[type="file"] { width: auto; display: inline; }
-        .status-cell { font-weight: bold; }
         
-        /* Estilo para a nova ferramenta de zoom */
-        .zoom-controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-        .zoom-controls button { padding: 8px 15px; background-color: #ccc; border: none; cursor: pointer; }
-        .zoom-controls button:hover { background-color: #aaa; }
+        /* Tabela de Dados */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f8f8f8; }
 
-        /* ========================================================= */
-        /* === NOVO ESTILO DO CARD (BASEADO NA IMAGEM FIXA) ========== */
-        /* ========================================================= */
+        /* Estilização do Card (1080x1350) */
         #card-preview {
-            width: 600px; 
-            height: 1066px; 
-            border: 1px solid #ddd;
-            border-radius: 10px;
+            width: 540px; /* Metade de 1080 para visualização */
+            height: 675px; /* Metade de 1350 para visualização */
+            position: relative;
             overflow: hidden;
-            position: relative; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            display: block; 
-
-            /* FUNDO PADRÃO */
-            background-image: url('./assets/background-card.png'); 
-            background-size: cover;
-            background-position: center;
-            background-color: #000; 
+            background-image: url('https://raw.githubusercontent.com/thamiriscastilho3/gerador-de-cards-massa/main/assets/background-card.png.png');
+            background-size: 100% 100%;
+            background-color: #fff;
+            flex-shrink: 0;
         }
 
-        /* 1. TÍTULO DO CARD (Cor e posição mantidas do seu código) */
-        #card-titulo {
+        /* Títulos e Subtítulos */
+        #card-header {
             position: absolute;
-            top: 120px; 
+            top: 60px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+        }
+        #card-titulo { color: #fff; font-size: 28px; font-weight: 800; margin: 0; text-transform: uppercase; }
+        #card-subtitulo { color: #fff; font-size: 16px; font-weight: 400; margin-top: 5px; }
+
+        /* Selo de Faixa */
+        #card-faixa {
+            position: absolute;
+            top: 180px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            text-align: center;
-            color: #ffffff; 
-            font-size: 2.0em;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.2;
-            z-index: 20;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        /* 2. ÁREA DOS PREÇOS (Canto superior direito) */
-        .precos-container {
-            position: absolute;
-            top: 235px; 
-            right: 70px; 
-            text-align: right;
-            z-index: 20;
-            line-height: 1.1;
-            font-family: sans-serif;
-            font-weight: 700;
-        }
-
-        #label-compre-por, #label-venda-por {
-            font-size: 1em;
-            font-weight: 400;
-            color: #4a4a4a;
-            margin: 0;
-            display: block;
-        }
-
-        /* Base para os valores: usa Flexbox para alinhar as partes do preço */
-        #valor-compre-por, #valor-venda-por {
-            display: flex;
-            justify-content: flex-end; 
-            align-items: flex-end; 
+            background: #fff;
+            color: var(--cor-primaria);
+            padding: 5px 20px;
+            border-radius: 20px;
             font-weight: 900;
-            color: #ffffff; 
-            line-height: 1; 
-            margin: 0;
+            font-size: 14px;
+            z-index: 10;
         }
 
-        #valor-compre-por {
-            font-size: 3.5em; 
-            margin-bottom: 15px;
-        }
-
-        #valor-venda-por {
-            font-size: 2.5em; 
-        }
-        
-        /* R$ e Centavos (Tamanho menor, alinhados à base) */
-        .valor-moeda, .valor-centavos {
-            font-size: 0.45em; 
-            align-self: flex-end; 
-            padding-bottom: 0.1em; 
-            font-weight: 700;
-            margin-left: 2px;
-        }
-
-        /* O valor-reais (número antes da vírgula) usa o tamanho base (1em) */
-        .valor-reais {
-            font-size: 1em; 
-            line-height: 1;
-        }
-
-        /* 3. IMAGEM DO PRODUTO (Posição mantida do seu código) */
+        /* Imagem do Produto */
         #card-imagem-area {
             position: absolute;
-            top: 350px; 
+            top: 220px;
             left: 50%;
             transform: translateX(-50%);
-            width: 70%; 
-            height: 500px; 
-            z-index: 10; 
-            overflow: hidden;
+            width: 350px;
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
         }
+        #card-imagem { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
 
-        #card-imagem {
-            width: 100%; 
-            height: 100%; 
-            background-color: transparent; 
-            background-size: cover; 
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-
-        /* 4. SKU E NOME DO SKU (Cor e posição mantidas do seu código) */
-        #card-info-produto {
+        /* Container de Preços */
+        .precos-box {
             position: absolute;
-            bottom: 170px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 280px;
+            bottom: 160px;
+            right: 40px;
+            text-align: right;
+            color: #fff;
+            z-index: 10;
+        }
+        .venda-por { font-size: 14px; margin-bottom: -5px; opacity: 0.9; }
+        .valor-promocionado { font-size: 22px; font-weight: 300; text-decoration: line-through; margin-bottom: 5px; }
+        .compre-por-label { font-size: 18px; font-weight: 800; color: #fff; }
+        .valor-principal { font-size: 55px; font-weight: 900; line-height: 1; }
+        .valor-principal span { font-size: 20px; }
+
+        /* Rodapé com Informações do Produto */
+        #card-footer {
+            position: absolute;
+            bottom: 60px;
+            width: 100%;
+            background: var(--cor-primaria);
+            padding: 10px 0;
+            color: #fff;
             text-align: center;
-            background-color: #ab2427; 
-            padding: 10px 20px;
-            border-radius: 0px;
-            z-index: 20;
+        }
+        #card-sku { font-size: 12px; margin: 0; }
+        #card-nome-produto { font-size: 14px; font-weight: 700; margin: 0; padding: 0 20px; }
+
+        /* Texto Legal */
+        #card-legal {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            font-size: 8px;
+            color: var(--cor-texto-legal);
+            padding: 0 30px;
+            text-align: center;
+            line-height: 1.1;
         }
 
-        /* 🚨 ALTERAÇÃO SOLICITADA */
-        #card-sku {
-            font-size: 1.0em; /* Alterado de 1.2em */
-            font-weight: 400; 
-            color: #ffffff; 
-            margin: 0; 
-        }
-        
-        /* 🚨 ALTERAÇÃO SOLICITADA */
-        #card-nome-produto {
-            font-size: 0.7em; /* Alterado de 1.5em */
-            font-weight: 700; 
-            color: #ffffff; 
-            margin: 0; 
-            line-height: 1.2;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        /* Removemos elementos não utilizados no novo design */
-        #card-subtitulo, #card-valor-overlay, #card-footer-legal, 
-        #card-titulo-container {
-            display: none !important;
-        }
+        .download-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>Gerador de Cards de Produto - Padrão de Marca Fixo</h1>
-
     <div class="container-criacao">
-        
         <div id="formulario-entrada">
-
+            <h1>Gerador de Cards Ciclo 2</h1>
+            
             <div id="step-1" class="step active">
-                <h2>1. Upload da Planilha de Dados</h2>
-                
-                <p>O design do Card está fixo na imagem de fundo. Você precisa apenas das informações mutáveis na planilha.</p>
-
-                <p>Use o Google Planilhas para preencher sua base de dados. Siga os passos:</p>
-                
-                <ol style="text-align: left; padding-left: 20px; font-size: 0.9em;">
-                    <li>Clique no link abaixo para criar uma **cópia** do modelo.</li>
-                    <li>Preencha os dados e faça o download como **CSV**.</li>
-                </ol>
-                
-                <a id="download-template" 
-                    href="https://docs.google.com/spreadsheets/d/1imdU6xCTMruDmqk8ds019uIfiNa97jJhQqjFc-GF5Gc/copy" 
-                    target="_blank" 
-                    onclick="alert('Lembre-se de fazer o download do arquivo no formato CSV após o preenchimento na Planilha Google!')">
-                    Abrir Modelo no Google Planilhas
-                </a>
-
-                <label for="input-csv">Selecione o arquivo CSV baixado (.csv):</label>
-                <input type="file" id="input-csv" accept=".csv, text/csv">
-                
-                <button onclick="processarPlanilha()">Processar Dados da Planilha</button>
+                <h3>Passo 1: Carregar Planilha CSV</h3>
+                <input type="file" id="input-csv" accept=".csv">
+                <p><small>Certifique-se que as colunas são: Título Principal, SUBTÍTULO, FAIXA, VENDA POR, valor promocionado, COMPRE POR, SKU, Nome do Produto, (TEXTO LEGAL)</small></p>
             </div>
 
             <div id="step-2" class="step">
-                <h2>2. Anexar Imagens por Produto</h2>
-                <p>Carregue a imagem para cada card (Opcional). A Prévia e o Download estão sempre ativos.</p>
-                
-                <table id="data-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Título</th>
-                            <th>Vl. Original</th>
-                            <th>Vl. Venda</th>
-                            <th>SKU</th>
-                            <th>Imagem</th>
-                            <th>Status</th>
-                            <th>Prévia</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                
-                <button onclick="gerarTodosCards()" class="download-btn">
-                    Gerar e Baixar TODOS os Cards (Arquivo ZIP)
-                </button>
-                <button onclick="irParaPasso(1)">Voltar para Upload</button>
-            </div>
-
-            <div id="step-3" class="step">
-                <h2>3. Pré-visualização Individual</h2>
-                <p>Use o zoom para ajustar a imagem do produto no espaço preto.</p>
-                
-                <div class="zoom-controls">
-                    <button onclick="ajustarZoom(-0.05)">Zoom -</button>
-                    <button onclick="ajustarZoom(0.05)">Zoom +</button>
-                    <button onclick="resetarZoom()">Resetar</button>
+                <h3>Passo 2: Imagens e Gerenciamento</h3>
+                <button onclick="gerarTodosCards()" class="download-btn">Baixar Todos em ZIP (1080x1350)</button>
+                <div style="overflow-y: auto; max-height: 400px;">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>SKU</th>
+                                <th>Imagem</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-
-                <button onclick="gerarCardIndividual()" class="download-btn">Baixar Este Card</button>
-                <button onclick="voltarParaTabela()">Voltar para a Lista</button>
             </div>
-
         </div>
 
         <div id="card-preview">
-            
-            <p id="card-titulo">TÍTULO DO CARD</p>
+            <div id="card-header">
+                <p id="card-titulo">TÍTULO</p>
+                <p id="card-subtitulo">SUBTÍTULO</p>
+            </div>
+
+            <div id="card-faixa">FAIXA</div>
 
             <div id="card-imagem-area">
                 <div id="card-imagem"></div>
             </div>
-            
-            <div class="precos-container">
-                <span id="label-compre-por">COMPRE POR</span>
-                <span id="valor-compre-por">000,00</span>
-                
-                <span id="label-venda-por">VENDA POR</span>
-                <span id="valor-venda-por">000,00</span>
+
+            <div class="precos-box">
+                <div class="venda-por">Venda por:</div>
+                <div id="valor-promocionado" class="valor-promocionado">R$ 0,00</div>
+                <div class="compre-por-label">COMPRE POR:</div>
+                <div id="valor-principal" class="valor-principal"><span>R$</span> 00,00</div>
             </div>
 
-            <div id="card-info-produto">
-                <p id="card-sku">SKU</p>
-                <p id="card-nome-produto">NOME DO SKU</p>
+            <div id="card-footer">
+                <p id="card-sku">SKU 00000</p>
+                <p id="card-nome-produto">NOME DO PRODUTO EXEMPLO</p>
             </div>
-            
-            <div id="card-titulo-container"></div>
-            <div id="card-valor-overlay"></div>
-            <div id="card-footer-legal"></div>
 
+            <div id="card-legal">Texto legal informativo aqui...</div>
         </div>
     </div>
-    
+
     <script>
-        // ==============================================
-        // JAVASCRIPT: LÓGICA DE CRIAÇÃO EM MASSA
-        // ==============================================
+        let dadosCards = [];
 
-        let dadosPlanilha = []; 
-        let cardAtualIndex = -1; 
-        let currentZoom = 1.0; 
-
-        // FUNÇÃO DE RENDERIZAÇÃO DE VALOR
-        const renderizarValorFormatado = (elementoId, valorString) => {
-            const elemento = document.getElementById(elementoId);
-            
-            const valorTratado = String(valorString).replace('R$', '').replace('.', '').replace(',', '.').trim();
-            const num = parseFloat(valorTratado);
-            
-            if (isNaN(num)) {
-                elemento.innerHTML = `<span class="valor-moeda">R$</span><span class="valor-reais">0</span><span class="valor-centavos">,00</span>`;
-                return;
-            }
-
-            const valorFormatado = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            
-            const valorSemMoeda = valorFormatado.replace('R$', '').trim();
-            const partes = valorSemMoeda.split(',');
-            const reais = partes[0] || '0';
-            const centavos = partes[1] || '00';
-            
-            elemento.innerHTML = `
-                <span class="valor-moeda">R$</span>
-                <span class="valor-reais">${reais}</span>
-                <span class="valor-centavos">,${centavos}</span>
-            `;
-        };
-        
-        // --- FUNÇÕES DE ZOOM ---
-        const aplicarZoom = () => {
-            const imgDiv = document.getElementById('card-imagem');
-            imgDiv.style.backgroundSize = `${currentZoom * 100}%`;
-        };
-
-        const ajustarZoom = (fator) => {
-            currentZoom = Math.min(2.0, Math.max(1.0, currentZoom + fator)); 
-            aplicarZoom();
-        };
-
-        const resetarZoom = () => {
-            currentZoom = 1.0;
-            aplicarZoom();
-        };
-
-        // --- FUNÇÕES DE FLUXO E MALA DIRETA ---
-        
-        const irParaPasso = (stepNum) => {
-            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`step-${stepNum}`).classList.add('active');
-            
-            if (stepNum === 3) {
-                resetarZoom();
-                const idToPreview = cardAtualIndex !== -1 ? cardAtualIndex : (dadosPlanilha[0] ? dadosPlanilha[0].id : -1);
-                if (idToPreview !== -1) atualizarCardPreview(idToPreview); 
-            } else if (stepNum === 2 && dadosPlanilha.length > 0) {
-                 const idToPreview = cardAtualIndex !== -1 ? cardAtualIndex : dadosPlanilha[0].id;
-                 atualizarCardPreview(idToPreview); 
-            }
-        };
-        
-        const formatarValorTabela = (valor) => {
-            const num = parseFloat(String(valor).replace('R$', '').replace('.', '').replace(',', '.').trim());
-            if (isNaN(num)) return 'R$ 0,00';
-            return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        };
-        
-        // 🚨 FUNÇÃO PARA GERAR A IMAGEM COMO DATAURL
-        const gerarCardData = async (produto) => {
-             const SCALE_FACTOR = 1.8;
-             
-             atualizarCardPreview(produto.id);
-             
-             const imgDiv = document.getElementById('card-imagem');
-             const originalSize = imgDiv.style.backgroundSize;
-             const originalPosition = imgDiv.style.backgroundPosition;
-
-             if (originalSize) {
-                 imgDiv.style.backgroundSize = originalSize;
-             } else {
-                 imgDiv.style.backgroundSize = 'cover';
-             }
-             if (originalPosition) {
-                 imgDiv.style.backgroundPosition = originalPosition;
-             } else {
-                 imgDiv.style.backgroundPosition = 'center';
-             }
-             
-             await new Promise(resolve => setTimeout(resolve, 50)); 
-             
-             document.body.style.margin = '0'; 
-             document.body.style.padding = '0';
-             
-             const canvas = await html2canvas(document.getElementById('card-preview'), { 
-                 scale: SCALE_FACTOR,
-                 useCORS: true,
-                 x: 0,
-                 y: 0,
-             });
-                 
-             document.body.style.margin = '';
-             document.body.style.padding = '';
-
-             // Restaura os estilos
-             imgDiv.style.backgroundSize = originalSize;
-             imgDiv.style.backgroundPosition = originalPosition;
-
-             // Retorna a URL Base64
-             return canvas.toDataURL('image/png');
-        };
-
-        // FUNÇÃO DE DOWNLOAD INDIVIDUAL (mantida para facilitar o download de 1 item)
-        const gerarCardIndividual = async () => {
-             if (cardAtualIndex === -1) {
-                 alert("Por favor, selecione um card na lista antes de tentar baixar.");
-                 return;
-             }
-             
-             const produto = dadosPlanilha.find(p => p.id === cardAtualIndex);
-             const dataURL = await gerarCardData(produto); // Obtém os dados
-
-             const link = document.createElement('a');
-             const tituloLimpo = (produto['Título Principal'] || 'card').replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-             const skuLimpo = (produto['SKU'] || 'sem-sku').replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-             
-             link.download = `${tituloLimpo}-${skuLimpo}-600x1066.png`;
-             link.href = dataURL;
-             link.click();
-
-             document.getElementById(`status-${produto.id}`).innerText = 'Card Gerado';
-        };
-
-        // 🚨 FUNÇÃO PARA GERAR O ZIP
-        const gerarTodosCards = async () => {
-            const cardsParaGerar = dadosPlanilha;
-            
-            if (cardsParaGerar.length === 0) {
-                alert("A planilha está vazia ou não foi processada.");
-                return;
-            }
-
-            const downloadBtn = document.querySelector('.download-btn');
-            const originalText = downloadBtn.innerText;
-            downloadBtn.innerText = 'Processando e Zipando... Não feche a janela!';
-            downloadBtn.disabled = true;
-
-            const zip = new JSZip();
-            const pasta = zip.folder("cards-gerados");
-            
-            for (const produto of cardsParaGerar) {
-                try {
-                    // 1. Gera os dados da imagem
-                    const dataURL = await gerarCardData(produto);
-                    
-                    // 2. Limpa o nome do arquivo
-                    const tituloLimpo = (produto['Título Principal'] || 'card').replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-                    const skuLimpo = (produto['SKU'] || 'sem-sku').replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-                    const nomeArquivo = `${tituloLimpo}-${skuLimpo}-600x1066.png`;
-
-                    // 3. Converte DataURL para Base64 puro e adiciona ao ZIP
-                    const base64Data = dataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-                    pasta.file(nomeArquivo, base64Data, {base64: true});
-
-                    document.getElementById(`status-${produto.id}`).innerText = 'Adicionado ao ZIP';
-                    
-                } catch (e) {
-                    console.error(`Falha ao gerar o card para ${produto['Título Principal']}:`, e);
-                    document.getElementById(`status-${produto.id}`).innerText = 'ERRO';
-                }
-            }
-
-            // 4. Gera o arquivo ZIP
-            zip.generateAsync({type:"blob"})
-            .then(function(content) {
-                // 5. Usa FileSaver.js para iniciar o download único
-                saveAs(content, "cards_em_massa.zip");
-                alert("Geração em massa concluída! Seu download ZIP deve ter iniciado.");
-            })
-            .finally(() => {
-                downloadBtn.innerText = originalText;
-                downloadBtn.disabled = false;
-            });
-        };
-
-
-        const processarPlanilha = () => {
-            const file = document.getElementById('input-csv').files[0];
-            if (!file) { alert("Por favor, selecione um arquivo CSV."); return; }
-
-            Papa.parse(file, {
-                header: true, 
-                dynamicTyping: false,
+        document.getElementById('input-csv').addEventListener('change', function(e) {
+            Papa.parse(e.target.files[0], {
+                header: true,
                 skipEmptyLines: true,
-                delimiter: "", 
-                worker: true,
-                
                 complete: function(results) {
-                    if (results.errors.length > 0) { console.error(results.errors); alert("Erro na leitura do CSV."); return; }
-                    if (results.data.length === 0) { alert("A planilha está vazia."); return; }
-                    
-                    const requiredHeaders = ["Título Principal", "Valor Original", "Valor de Venda", "Nome do Produto", "SKU"];
-                    const actualHeaders = results.meta.fields || [];
-
-                    const missingHeaders = requiredHeaders.filter(header => !actualHeaders.includes(header));
-
-                    if (missingHeaders.length > 0) { alert(`⚠️ Erro de Cabeçalho: Os seguintes títulos de coluna estão faltando ou incorretos na primeira linha: ${missingHeaders.join(', ')}. Por favor, use o modelo exato.`); return; }
-
-                    dadosPlanilha = results.data.map((item, index) => ({
-                        id: index,
-                        'Título Principal': item['Título Principal'] || '',
-                        'Valor Original': item['Valor Original'] || '0', 
-                        'Valor de Venda': item['Valor de Venda'] || '0',
-                        'Nome do Produto': item['Nome do Produto'] || '',
-                        'SKU': item['SKU'] || '',
-                        imagem: null, 
-                        status: 'Pronto para Visualizar', 
-                        cardGerado: false
-                    })).filter(item => item['Título Principal'] !== null && item['Título Principal'] !== ''); 
-                    
-                    if (dadosPlanilha.length === 0) { alert("Nenhuma linha de dados válida encontrada após a filtragem."); return; }
-
-                    montarTabelaDeDados();
-                    irParaPasso(2); 
-                },
-                error: function(error) { alert("Erro fatal ao processar o arquivo CSV: " + error.message); }
+                    dadosCards = results.data;
+                    renderizarTabela();
+                    document.getElementById('step-1').classList.remove('active');
+                    document.getElementById('step-2').classList.add('active');
+                    atualizarPreview(0);
+                }
             });
-        };
+        });
 
-        const montarTabelaDeDados = () => {
+        function renderizarTabela() {
             const tbody = document.querySelector('#data-table tbody');
-            tbody.innerHTML = ''; 
-            
-            dadosPlanilha.forEach((produto, index) => {
+            tbody.innerHTML = '';
+            dadosCards.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${produto['Título Principal'] || ''}</td>
-                    <td>${formatarValorTabela(produto['Valor Original'])}</td>
-                    <td>${formatarValorTabela(produto['Valor de Venda'])}</td>
-                    <td>${produto['SKU'] || ''}</td>
-                    <td class="image-cell">
-                        <input type="file" accept="image/png, image/jpeg" 
-                               id="file-${index}" 
-                               onchange="carregarImagemMassa(event, ${index})">
-                    </td>
-                    <td class="status-cell" id="status-${index}">${produto.status}</td>
-                    <td>
-                        <button onclick="irParaVisualizacao(${index})">
-                            Prévia
-                        </button>
-                    </td>
+                    <td>${item['Nome do Produto']}</td>
+                    <td>${item['SKU']}</td>
+                    <td><input type="file" onchange="carregarImagem(event, ${index})"></td>
+                    <td><button onclick="atualizarPreview(${index})">Ver</button></td>
                 `;
                 tbody.appendChild(tr);
             });
-        };
+        }
 
-        const carregarImagemMassa = (event, index) => {
-            const arquivo = event.target.files[0];
-            const statusCell = document.getElementById(`status-${index}`);
+        function carregarImagem(event, index) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                dadosCards[index].imagemData = e.target.result;
+                atualizarPreview(index);
+            };
+            reader.readAsDataURL(file);
+        }
 
-            if (arquivo) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    dadosPlanilha[index].imagem = e.target.result;
-                    dadosPlanilha[index].status = 'Imagem Carregada';
-                    statusCell.innerText = 'Imagem Carregada';
-                    
-                    if (document.getElementById('step-3').classList.contains('active') && cardAtualIndex === index) {
-                         atualizarCardPreview(index);
-                    }
-                };
-                reader.readAsDataURL(arquivo);
-            }
-        };
-
-        const atualizarCardPreview = (id) => {
-            cardAtualIndex = id;
-            const produto = dadosPlanilha.find(p => p.id === id); 
-            if (!produto) return;
-
-            document.getElementById('card-titulo').innerText = produto['Título Principal'] || 'TÍTULO DO CARD';
-            renderizarValorFormatado('valor-compre-por', produto['Valor Original']);
-            renderizarValorFormatado('valor-venda-por', produto['Valor de Venda']);
-            document.getElementById('card-nome-produto').innerText = produto['Nome do Produto'] || 'NOME DO SKU';
-            document.getElementById('card-sku').innerText = produto['SKU'] || 'SKU';
+        function atualizarPreview(index) {
+            const item = dadosCards[index];
+            document.getElementById('card-titulo').innerText = item['Título Principal'] || '';
+            document.getElementById('card-subtitulo').innerText = item['SUBTÍTULO'] || '';
+            document.getElementById('card-faixa').innerText = item['FAIXA'] || '';
+            document.getElementById('valor-promocionado').innerText = item['valor promocionado'] || '';
             
-            const cardImagemDiv = document.getElementById('card-imagem');
-            cardImagemDiv.style.backgroundImage = produto.imagem ? `url('${produto.imagem}')` : 'none';
-        };
-        
-        const irParaVisualizacao = (index) => {
-            atualizarCardPreview(index);
-            irParaPasso(3);
-        };
-        
-        const voltarParaTabela = () => {
-            irParaPasso(2);
-        };
+            // Tratamento do preço principal
+            let preco = item['COMPRE POR'] || '0,00';
+            preco = preco.replace('R$', '').trim();
+            document.getElementById('valor-principal').innerHTML = `<span>R$</span> ${preco}`;
+            
+            document.getElementById('card-sku').innerText = `SKU ${item['SKU']}`;
+            document.getElementById('card-nome-produto').innerText = item['Nome do Produto'];
+            document.getElementById('card-legal').innerText = item['(TEXTO LEGAL)'] || '';
+            
+            const imgDiv = document.getElementById('card-imagem');
+            imgDiv.style.backgroundImage = item.imagemData ? `url(${item.imagemData})` : 'none';
+        }
 
-        document.getElementById('input-csv').addEventListener('change', processarPlanilha);
+        async function gerarTodosCards() {
+            const zip = new JSZip();
+            const originalScale = 2; // Para chegar nos 1080x1350 (540 * 2)
 
+            for (let i = 0; i < dadosCards.length; i++) {
+                atualizarPreview(i);
+                await new Promise(r => setTimeout(r, 100)); // Espera render
+                
+                const canvas = await html2canvas(document.getElementById('card-preview'), {
+                    scale: originalScale,
+                    useCORS: true
+                });
+                
+                const imgData = canvas.toDataURL("image/png").split(',')[1];
+                zip.file(`card_${dadosCards[i].SKU}.png`, imgData, {base64: true});
+            }
+
+            zip.generateAsync({type:"blob"}).then(content => {
+                saveAs(content, "cards_boticario_ciclo2.zip");
+            });
+        }
     </script>
 </body>
 </html>
-
