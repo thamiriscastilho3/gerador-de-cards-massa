@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cards Profissional - Boticário</title>
+    <title>Gerador de Cards Pró - Boticário</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -14,53 +14,58 @@
         :root { --cor-boticario: #00a775; --bg-painel: #ffffff; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; overflow: hidden; }
         
-        #controls { width: 420px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
-        .header-controls { padding: 20px; border-bottom: 1px solid #eee; }
+        #controls { width: 450px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
+        .header-controls { padding: 15px 20px; border-bottom: 1px solid #eee; background: #fafafa; }
         .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
         
-        #preview-area { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; background: #555; overflow: auto; }
+        #preview-area { flex: 1; display: flex; justify-content: center; align-items: center; background: #444; overflow: auto; position: relative; }
         
-        /* CONTAINER DE RENDERIZAÇÃO ISOLADO */
-        #render-container { position: relative; width: 1080px; height: 1350px; background: white; flex-shrink: 0; transform: scale(0.35); transform-origin: center center; }
+        #render-wrap { position: relative; width: 1080px; height: 1350px; flex-shrink: 0; transform-origin: center center; }
 
-        /* CARD CONFIG (1080x1350) */
         #card-canvas {
             width: 1080px; height: 1350px; position: relative;
             background-image: url('https://raw.githubusercontent.com/thamiriscastilho3/gerador-de-cards-massa/main/assets/background-card.png.png');
-            background-size: cover; background-position: center; overflow: hidden; 
-            background-color: #fff;
+            background-size: 100% 100%; background-position: center; overflow: hidden; background-color: #000;
         }
 
-        #header-area { position: absolute; top: 120px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; }
-        #titulo-principal { font-size: 60px; font-weight: 900; margin: 0; text-transform: uppercase; line-height: 1.1; }
+        #header-area { position: absolute; top: 120px; left: 0; width: 100%; text-align: center; color: white; z-index: 10; pointer-events: none; }
+        #titulo-principal { font-size: 60px; font-weight: 900; margin: 0; text-transform: uppercase; line-height: 1; }
         #subtitulo { font-size: 32px; font-weight: 300; margin: 10px 0; }
         
-        #produto-img-container { position: absolute; top: 350px; left: 50%; transform: translateX(-50%); width: 700px; height: 700px; display: flex; align-items: center; justify-content: center; z-index: 5; }
-        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.1s; }
+        #produto-img-container { position: absolute; top: 350px; left: 50%; transform: translateX(-50%); width: 750px; height: 750px; display: flex; align-items: center; justify-content: center; z-index: 5; }
+        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        #bloco-informativo { position: absolute; top: 50%; right: 60px; transform: translateY(-50%); background-color: var(--cor-boticario); color: white; padding: 40px; border-radius: 20px; width: 420px; z-index: 20; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        /* BLOCO CORRIGIDO: Removido box-shadow que causava a marca cinza */
+        #bloco-informativo { 
+            position: absolute; top: 50%; right: 80px; transform: translateY(-50%); 
+            background-color: #00a775; /* Cor sólida */
+            color: white; padding: 40px; border-radius: 20px; width: 400px; z-index: 20;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
         #display-compre { font-size: 85px; font-weight: 900; line-height: 1; }
         #display-compre span { font-size: 35px; vertical-align: top; margin-right: 5px; }
         #display-venda { font-size: 28px; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 20px; margin-bottom: 20px; }
         #info-detalhes { font-size: 20px; font-weight: 700; text-transform: uppercase; }
         
         #texto-legal { 
-            position: absolute; bottom: 40px; left: 80px; right: 80px; 
-            font-size: 18px; color: #fff; text-align: center; line-height: 1.2; 
-            text-shadow: 1px 1px 3px #000; z-index: 30; opacity: 0.9;
+            position: absolute; bottom: 40px; left: 100px; right: 100px; 
+            font-size: 18px; color: #fff; text-align: center; line-height: 1.2; z-index: 30;
         }
 
+        /* UI */
         .step { display: none; }
         .step.active { display: block; }
         .edit-group { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-        .control-row { margin-bottom: 10px; font-size: 13px; font-weight: bold; color: #333; }
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; transition: 0.2s; }
+        .edit-group h4 { margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 5px; color: var(--cor-boticario); }
+        .control-row { margin-bottom: 12px; font-size: 12px; font-weight: bold; color: #444; }
+        input[type="range"] { width: 100%; margin-top: 5px; cursor: pointer; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; }
         .btn-primary { background: var(--cor-boticario); color: white; }
-        .btn-primary:hover { opacity: 0.9; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .input-url { width: 100%; padding: 6px; font-size: 11px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        td { padding: 8px 4px; border-bottom: 1px solid #eee; }
+        .view-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -68,58 +73,69 @@
     <div id="controls">
         <div class="header-controls">
             <h2 style="margin:0; color:var(--cor-boticario);">Gerador Ciclo 2</h2>
-            <small>Resolução: 1080x1350 (4:5)</small>
         </div>
+        
         <div class="scroll-content">
             <div id="step-1" class="step active">
-                <p>Suba a planilha <b>CSV</b> com os dados:</p>
+                <p>Suba sua planilha <b>CSV</b>:</p>
                 <input type="file" id="csv-file" accept=".csv">
             </div>
+
             <div id="step-2" class="step">
                 <div class="edit-group">
-                    <label><b>Exportar como:</b></label>
-                    <select id="export-format" style="width:100%; padding:8px; margin:10px 0; border-radius:4px;">
-                        <option value="pdf">PDF Único (Alta Qualidade)</option>
-                        <option value="png">Pasta ZIP de imagens (PNG)</option>
+                    <h4>Exportação</h4>
+                    <select id="export-format" style="width:100%; padding:8px; margin-bottom:10px;">
+                        <option value="pdf">PDF Único (Corrigido)</option>
+                        <option value="png">Imagens ZIP (PNG)</option>
                     </select>
-                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR TUDO</button>
-                </div>
-                
-                <div class="edit-group">
-                    <h4 style="margin-top:0; color:var(--cor-boticario);">Ajustes Globais da Foto</h4>
-                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.5" max="3" step="0.05" value="1" oninput="aplicarAjustes()" style="width:100%"></div>
-                    <div class="control-row">Eixo X: <input type="range" id="posX-img" min="-500" max="500" step="1" value="0" oninput="aplicarAjustes()" style="width:100%"></div>
-                    <div class="control-row">Eixo Y: <input type="range" id="posY-img" min="-500" max="500" step="1" value="0" oninput="aplicarAjustes()" style="width:100%"></div>
+                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR</button>
+                    <button class="btn" style="background:#f0f0f0;" onclick="location.reload()">Trocar Planilha</button>
                 </div>
 
                 <div class="edit-group">
-                    <h4 style="margin-top:0; color:var(--cor-boticario);">Ajustes de Texto</h4>
-                    <div class="control-row">Título (Y): <input type="range" id="posY-titulo" min="50" max="500" step="1" value="120" oninput="aplicarAjustes()" style="width:100%"></div>
-                    <div class="control-row">Rodapé (Y): <input type="range" id="posY-legal" min="10" max="300" step="1" value="40" oninput="aplicarAjustes()" style="width:100%"></div>
+                    <h4>Ajustes de Título & Subtítulo</h4>
+                    <div class="control-row">Altura (Y): <input type="range" id="posY-titulo" min="10" max="600" value="120" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Tam. Título: <input type="range" id="size-titulo" min="20" max="120" value="60" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Tam. Subtítulo: <input type="range" id="size-subtitulo" min="15" max="60" value="32" oninput="aplicarAjustes()"></div>
                 </div>
 
-                <h4 style="margin-bottom:5px;">Produtos Carregados</h4>
+                <div class="edit-group">
+                    <h4>Ajustes do Produto</h4>
+                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.1" max="3" step="0.1" value="1" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Posição X: <input type="range" id="posX-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Posição Y: <input type="range" id="posY-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
+                </div>
+
+                <div class="edit-group">
+                    <h4>Ajustes do Preço</h4>
+                    <div class="control-row">Posição X: <input type="range" id="posX-bloco" min="-600" max="100" value="0" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Posição Y: <input type="range" id="posY-bloco" min="-400" max="400" value="0" oninput="aplicarAjustes()"></div>
+                </div>
+
+                <div class="edit-group">
+                    <h4>Texto Legal</h4>
+                    <div class="control-row">Altura (Y): <input type="range" id="posY-legal" min="10" max="300" value="40" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">Tamanho Fonte: <input type="range" id="size-legal" min="10" max="35" value="18" oninput="aplicarAjustes()"></div>
+                </div>
+
                 <table id="data-table">
-                    <thead><tr style="font-size:11px; text-align:left;"><th>SKU</th><th>Imagem</th><th>Ver</th></tr></thead>
+                    <thead><tr><th>SKU</th><th>Foto</th><th>Ver</th></tr></thead>
                     <tbody></tbody>
                 </table>
-                <button class="btn" style="background:#f4f4f4; margin-top:20px;" onclick="location.reload()">Trocar Planilha</button>
             </div>
         </div>
     </div>
 
     <div id="preview-area">
-        <div id="render-container">
+        <div id="render-wrap" style="transform: scale(0.35);">
             <div id="card-canvas">
                 <div id="header-area">
-                    <p id="titulo-principal">TÍTULO DO CARD</p>
-                    <p id="subtitulo">SUBTÍTULO AQUI</p>
+                    <p id="titulo-principal">TÍTULO</p>
+                    <p id="subtitulo">SUBTÍTULO</p>
                 </div>
-                <div id="produto-img-container">
-                    <img id="produto-img" crossOrigin="anonymous" src="" style="display:none;">
-                </div>
+                <div id="produto-img-container"><img id="produto-img" crossOrigin="anonymous" src=""></div>
                 <div id="bloco-informativo">
-                    <div style="font-size: 20px; font-weight: bold; letter-spacing: 1px;">COMPRE POR:</div>
+                    <div style="font-size: 20px; font-weight: bold;">COMPRE POR:</div>
                     <div id="display-compre"><span>R$</span>00,00</div>
                     <div id="display-venda">Venda por: R$ 00,00</div>
                     <div id="info-detalhes"><span id="display-sku">00000</span> | <span id="display-nome">PRODUTO</span></div>
@@ -135,8 +151,7 @@
 
         document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
-                header: true, 
-                skipEmptyLines: true,
+                header: true, skipEmptyLines: true,
                 complete: function(results) {
                     planilha = results.data;
                     renderTabela();
@@ -152,110 +167,82 @@
             tbody.innerHTML = '';
             planilha.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-size:11px;">${row['SKU'] || 'N/A'}</td>
-                    <td>
-                        <input type="file" style="font-size:9px;" onchange="carregarArquivo(event, ${index})">
-                    </td>
-                    <td><button onclick="atualizarCard(${index})" style="cursor:pointer; border:none; background:#eee; padding:5px; border-radius:4px;">👁️</button></td>
-                `;
+                tr.innerHTML = `<td>${row['SKU'] || index}</td><td><input type="file" onchange="carregarArquivo(event, ${index})"></td><td><button class="view-btn" onclick="atualizarCard(${index})">👁️</button></td>`;
                 tbody.appendChild(tr);
             });
         }
 
         function carregarArquivo(event, index) {
             const reader = new FileReader();
-            reader.onload = (e) => { 
-                planilha[index].imgData = e.target.result; 
-                atualizarCard(index); 
-            };
+            reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
             reader.readAsDataURL(event.target.files[0]);
         }
 
         function atualizarCard(index) {
             const item = planilha[index];
-            // Mapeamento exato das colunas da planilha
             document.getElementById('titulo-principal').innerText = item['Título Principal'] || '';
             document.getElementById('subtitulo').innerText = item['SUBTÍTULO'] || '';
-            
             let compreVal = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
             document.getElementById('display-compre').innerHTML = `<span>R$</span>${compreVal}`;
-            
             document.getElementById('display-venda').innerText = `Venda por: ${item['VENDA POR'] || 'R$ 0,00'}`;
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
-            
             const img = document.getElementById('produto-img');
-            if (item.imgData) {
-                img.src = item.imgData;
-                img.style.display = 'block';
-            } else {
-                img.style.display = 'none';
-            }
+            img.src = item.imgData || '';
+            img.style.display = item.imgData ? 'block' : 'none';
             aplicarAjustes();
         }
 
         function aplicarAjustes() {
-            const img = document.getElementById('produto-img');
-            const zoom = document.getElementById('zoom-img').value;
-            const x = document.getElementById('posX-img').value;
-            const y = document.getElementById('posY-img').value;
-            img.style.transform = `scale(${zoom}) translate(${x}px, ${y}px)`;
+            document.getElementById('header-area').style.top = document.getElementById('posY-titulo').value + "px";
+            document.getElementById('titulo-principal').style.fontSize = document.getElementById('size-titulo').value + "px";
+            document.getElementById('subtitulo').style.fontSize = document.getElementById('size-subtitulo').value + "px";
             
-            document.getElementById('header-area').style.top = `${document.getElementById('posY-titulo').value}px`;
+            const img = document.getElementById('produto-img');
+            img.style.transform = `scale(${document.getElementById('zoom-img').value}) translate(${document.getElementById('posX-img').value}px, ${document.getElementById('posY-img').value}px)`;
+            
+            const bx = document.getElementById('posX-bloco').value;
+            const by = document.getElementById('posY-bloco').value;
+            document.getElementById('bloco-informativo').style.transform = `translate(${bx}px, calc(-50% + ${by}px))`;
             
             const legal = document.getElementById('texto-legal');
-            legal.style.bottom = `${document.getElementById('posY-legal').value}px`;
+            legal.style.bottom = document.getElementById('posY-legal').value + "px";
+            legal.style.fontSize = document.getElementById('size-legal').value + "px";
         }
 
         async function baixarArquivos() {
             const format = document.getElementById('export-format').value;
             const btn = document.getElementById('btn-download');
-            const cardElement = document.getElementById('card-canvas');
-            const container = document.getElementById('render-container');
+            const wrap = document.getElementById('render-wrap');
+            const card = document.getElementById('card-canvas');
             
-            btn.innerText = "⏳ PROCESSANDO...";
+            btn.innerText = "⏳ GERANDO...";
             btn.disabled = true;
 
-            // SALVA A ESCALA ATUAL E RESET PARA CAPTURA LIMPA
-            const originalTransform = container.style.transform;
-            container.style.transform = "none";
-            
+            const originalTransform = wrap.style.transform;
+            wrap.style.transform = "none"; 
+
             let pdf;
             let zip;
-
-            if (format === 'pdf') {
-                pdf = new jsPDF({ 
-                    orientation: 'p', 
-                    unit: 'px', 
-                    format: [1080, 1350],
-                    compress: true 
-                });
-            } else {
-                zip = new JSZip();
-            }
+            if (format === 'pdf') pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1350] });
+            else zip = new JSZip();
 
             for (let i = 0; i < planilha.length; i++) {
                 atualizarCard(i);
-                // Pequena pausa para garantir que o DOM atualizou a imagem
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 500)); 
 
-                const canvas = await html2canvas(cardElement, { 
-                    scale: 1, // Captura em 1:1 (1080x1350)
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: null,
-                    width: 1080,
+                const canvas = await html2canvas(card, { 
+                    scale: 1, 
+                    useCORS: true, 
+                    width: 1080, 
                     height: 1350,
-                    x: 0,
-                    y: 0,
-                    scrollX: 0,
-                    scrollY: 0
+                    backgroundColor: null, // Evita fundos cinzas automáticos
+                    logging: false
                 });
 
                 if (format === 'pdf') {
-                    const imgData = canvas.toDataURL("image/jpeg", 0.90);
+                    const imgData = canvas.toDataURL("image/jpeg", 0.95);
                     if (i > 0) pdf.addPage([1080, 1350], 'p');
                     pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1350);
                 } else {
@@ -264,17 +251,13 @@
                 }
             }
 
-            // RESTAURA A ESCALA DE PREVIEW
-            container.style.transform = originalTransform;
-
-            if (format === 'pdf') {
-                pdf.save("Cards_Ciclo_2_Boticario.pdf");
-            } else {
+            wrap.style.transform = originalTransform;
+            if (format === 'pdf') pdf.save("Cards_Limpos.pdf");
+            else {
                 const content = await zip.generateAsync({type:"blob"});
-                saveAs(content, "Cards_Ciclo_2_Boticario.zip");
+                saveAs(content, "Cards_Limpos.zip");
             }
-
-            btn.innerText = "GERAR E BAIXAR TUDO";
+            btn.innerText = "GERAR E BAIXAR";
             btn.disabled = false;
         }
     </script>
