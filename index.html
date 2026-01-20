@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cards Pró - Boticário</title>
+    <title>Gerador de Cards Pró - Ajuste Individual</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -19,7 +19,6 @@
         .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
         
         #preview-area { flex: 1; display: flex; justify-content: center; align-items: center; background: #444; overflow: auto; position: relative; }
-        
         #render-wrap { position: relative; width: 1080px; height: 1350px; flex-shrink: 0; transform-origin: center center; }
 
         #card-canvas {
@@ -33,12 +32,11 @@
         #subtitulo { font-size: 32px; font-weight: 300; margin: 10px 0; }
         
         #produto-img-container { position: absolute; top: 350px; left: 50%; transform: translateX(-50%); width: 750px; height: 750px; display: flex; align-items: center; justify-content: center; z-index: 5; }
-        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center center; }
         
         #bloco-informativo { 
             position: absolute; top: 50%; right: 80px; transform: translateY(-50%); 
-            background-color: #00a775; 
-            color: white; padding: 40px; border-radius: 20px; width: 400px; z-index: 20;
+            background-color: #00a775; color: white; padding: 40px; border-radius: 20px; width: 400px; z-index: 20;
             border: 1px solid rgba(255,255,255,0.2);
         }
 
@@ -47,10 +45,7 @@
         #display-venda { font-size: 28px; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 20px; margin-bottom: 20px; }
         #info-detalhes { font-size: 20px; font-weight: 700; text-transform: uppercase; }
         
-        #texto-legal { 
-            position: absolute; bottom: 40px; left: 100px; right: 100px; 
-            font-size: 18px; color: #fff; text-align: center; line-height: 1.2; z-index: 30;
-        }
+        #texto-legal { position: absolute; bottom: 40px; left: 100px; right: 100px; font-size: 18px; color: #fff; text-align: center; line-height: 1.2; z-index: 30; }
 
         /* UI */
         .step { display: none; }
@@ -63,10 +58,9 @@
         .btn-primary { background: var(--cor-boticario); color: white; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        th { background: #f0f0f0; padding: 8px; text-align: left; }
-        td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        td { padding: 8px 4px; border-bottom: 1px solid #eee; }
         .view-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .url-input { width: 100%; padding: 4px; font-size: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 3px; }
+        .url-input { width: 100%; font-size: 10px; margin-top: 4px; border: 1px solid #ccc; padding: 3px; }
     </style>
 </head>
 <body>
@@ -74,6 +68,7 @@
     <div id="controls">
         <div class="header-controls">
             <h2 style="margin:0; color:var(--cor-boticario);">Gerador Ciclo 2</h2>
+            <small id="status-card">Nenhum card selecionado</small>
         </div>
         
         <div class="scroll-content">
@@ -89,38 +84,25 @@
                         <option value="pdf">PDF Único</option>
                         <option value="png">Imagens ZIP (PNG)</option>
                     </select>
-                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR</button>
+                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR TUDO</button>
                     <button class="btn" style="background:#f0f0f0;" onclick="location.reload()">Trocar Planilha</button>
                 </div>
 
                 <div class="edit-group">
-                    <h4>Ajustes de Título & Subtítulo</h4>
-                    <div class="control-row">Altura (Y): <input type="range" id="posY-titulo" min="10" max="600" value="120" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Tam. Título: <input type="range" id="size-titulo" min="20" max="120" value="60" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Tam. Subtítulo: <input type="range" id="size-subtitulo" min="15" max="60" value="32" oninput="aplicarAjustes()"></div>
-                </div>
-
-                <div class="edit-group">
-                    <h4>Ajustes do Produto</h4>
-                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.1" max="3" step="0.1" value="1" oninput="aplicarAjustes()"></div>
+                    <h4 style="color: #e67e22;">Ajustes Individuais (Deste Card)</h4>
+                    <div class="control-row">Zoom Imagem: <input type="range" id="zoom-img" min="0.1" max="3" step="0.05" value="1" oninput="aplicarAjustes()"></div>
                     <div class="control-row">Posição X: <input type="range" id="posX-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
                     <div class="control-row">Posição Y: <input type="range" id="posY-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
                 </div>
 
                 <div class="edit-group">
-                    <h4>Ajustes do Preço</h4>
-                    <div class="control-row">Posição X: <input type="range" id="posX-bloco" min="-600" max="100" value="0" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Posição Y: <input type="range" id="posY-bloco" min="-400" max="400" value="0" oninput="aplicarAjustes()"></div>
-                </div>
-
-                <div class="edit-group">
-                    <h4>Texto Legal</h4>
-                    <div class="control-row">Altura (Y): <input type="range" id="posY-legal" min="10" max="300" value="40" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">Tamanho Fonte: <input type="range" id="size-legal" min="10" max="35" value="18" oninput="aplicarAjustes()"></div>
+                    <h4>Ajustes Globais (Para Todos)</h4>
+                    <div class="control-row">Altura Título: <input type="range" id="posY-titulo" min="10" max="400" value="120" oninput="aplicarAjustes()"></div>
+                    <div class="control-row">X do Preço: <input type="range" id="posX-bloco" min="-600" max="100" value="0" oninput="aplicarAjustes()"></div>
                 </div>
 
                 <table id="data-table">
-                    <thead><tr><th>SKU</th><th>Foto (Upload ou Link)</th><th>Ver</th></tr></thead>
+                    <thead><tr><th>SKU</th><th>Foto / Link</th><th>Ver</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -149,12 +131,20 @@
     <script>
         const { jsPDF } = window.jspdf;
         let planilha = [];
+        let currentCardIndex = 0;
 
         document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
                 header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    planilha = results.data;
+                    // Inicializa cada item com seus próprios ajustes
+                    planilha = results.data.map(item => ({
+                        ...item,
+                        imgData: '',
+                        zoom: 1,
+                        posX: 0,
+                        posY: 0
+                    }));
                     renderTabela();
                     document.getElementById('step-1').classList.remove('active');
                     document.getElementById('step-2').classList.add('active');
@@ -172,7 +162,7 @@
                     <td>${row['SKU'] || index}</td>
                     <td>
                         <input type="file" onchange="carregarArquivo(event, ${index})">
-                        <input type="text" class="url-input" placeholder="Ou cole o link da imagem aqui" onchange="carregarURL(this.value, ${index})">
+                        <input type="text" class="url-input" placeholder="Ou link URL" onchange="carregarURL(this.value, ${index})">
                     </td>
                     <td><button class="view-btn" onclick="atualizarCard(${index})">👁️</button></td>
                 `;
@@ -182,22 +172,20 @@
 
         function carregarArquivo(event, index) {
             const reader = new FileReader();
-            reader.onload = (e) => { 
-                planilha[index].imgData = e.target.result; 
-                atualizarCard(index); 
-            };
+            reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
             reader.readAsDataURL(event.target.files[0]);
         }
 
         function carregarURL(url, index) {
-            if(url.trim() !== "") {
-                planilha[index].imgData = url.trim();
-                atualizarCard(index);
-            }
+            if(url.trim()){ planilha[index].imgData = url.trim(); atualizarCard(index); }
         }
 
         function atualizarCard(index) {
+            currentCardIndex = index;
             const item = planilha[index];
+            
+            // Atualiza textos
+            document.getElementById('status-card').innerText = `Editando SKU: ${item['SKU'] || index}`;
             document.getElementById('titulo-principal').innerText = item['Título Principal'] || '';
             document.getElementById('subtitulo').innerText = item['SUBTÍTULO'] || '';
             let compreVal = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
@@ -206,38 +194,37 @@
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
-            
+
+            // Sincroniza Sliders com os valores salvos deste item
+            document.getElementById('zoom-img').value = item.zoom;
+            document.getElementById('posX-img').value = item.posX;
+            document.getElementById('posY-img').value = item.posY;
+
             const img = document.getElementById('produto-img');
             img.src = item.imgData || '';
+            img.style.display = item.imgData ? 'block' : 'none';
             
-            // Tratamento para exibir ou não a imagem
-            if(item.imgData) {
-                img.style.display = 'block';
-            } else {
-                img.style.display = 'none';
-            }
-            
-            aplicarAjustes();
+            aplicarAjustes(false); // aplica sem salvar por cima imediatamente
         }
 
-        function aplicarAjustes() {
+        function aplicarAjustes(salvar = true) {
+            const item = planilha[currentCardIndex];
+            
+            if (salvar) {
+                // Salva os valores atuais no objeto do item
+                item.zoom = document.getElementById('zoom-img').value;
+                item.posX = document.getElementById('posX-img').value;
+                item.posY = document.getElementById('posY-img').value;
+            }
+
+            // Aplicar Estilos Visuais
             document.getElementById('header-area').style.top = document.getElementById('posY-titulo').value + "px";
-            document.getElementById('titulo-principal').style.fontSize = document.getElementById('size-titulo').value + "px";
-            document.getElementById('subtitulo').style.fontSize = document.getElementById('size-subtitulo').value + "px";
             
             const img = document.getElementById('produto-img');
-            const zoom = document.getElementById('zoom-img').value;
-            const px = document.getElementById('posX-img').value;
-            const py = document.getElementById('posY-img').value;
-            img.style.transform = `scale(${zoom}) translate(${px}px, ${py}px)`;
+            img.style.transform = `scale(${item.zoom}) translate(${item.posX}px, ${item.posY}px)`;
             
             const bx = document.getElementById('posX-bloco').value;
-            const by = document.getElementById('posY-bloco').value;
-            document.getElementById('bloco-informativo').style.transform = `translate(${bx}px, calc(-50% + ${by}px))`;
-            
-            const legal = document.getElementById('texto-legal');
-            legal.style.bottom = document.getElementById('posY-legal').value + "px";
-            legal.style.fontSize = document.getElementById('size-legal').value + "px";
+            document.getElementById('bloco-informativo').style.transform = `translate(${bx}px, -50%)`;
         }
 
         async function baixarArquivos() {
@@ -248,27 +235,19 @@
             
             btn.innerText = "⏳ GERANDO...";
             btn.disabled = true;
-
             const originalTransform = wrap.style.transform;
             wrap.style.transform = "none"; 
 
-            let pdf;
-            let zip;
+            let pdf; let zip;
             if (format === 'pdf') pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1350] });
             else zip = new JSZip();
 
             for (let i = 0; i < planilha.length; i++) {
-                atualizarCard(i);
-                // Espera um pouco mais para garantir que a imagem (especialmente via URL) carregou
-                await new Promise(r => setTimeout(r, 800)); 
+                atualizarCard(i); // Isso já carrega a posição salva de cada um
+                await new Promise(r => setTimeout(r, 700)); 
 
                 const canvas = await html2canvas(card, { 
-                    scale: 1, 
-                    useCORS: true, 
-                    width: 1080, 
-                    height: 1350,
-                    backgroundColor: null,
-                    logging: false
+                    scale: 1, useCORS: true, width: 1080, height: 1350, logging: false
                 });
 
                 if (format === 'pdf') {
@@ -282,16 +261,15 @@
             }
 
             wrap.style.transform = originalTransform;
-            if (format === 'pdf') pdf.save("Cards_Ciclo2.pdf");
+            if (format === 'pdf') pdf.save("Cards_Ajustados.pdf");
             else {
                 const content = await zip.generateAsync({type:"blob"});
-                saveAs(content, "Cards_Ciclo2.zip");
+                saveAs(content, "Cards_Ajustados.zip");
             }
-            btn.innerText = "GERAR E BAIXAR";
+            btn.innerText = "GERAR E BAIXAR TUDO";
             btn.disabled = false;
         }
     </script>
 </body>
 </html>
-
 
