@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Cards Pró - Ajuste Individual</title>
+    <title>Gerador Pró - Memória de SKU</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -14,7 +14,7 @@
         :root { --cor-boticario: #00a775; --bg-painel: #ffffff; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; overflow: hidden; }
         
-        #controls { width: 500px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
+        #controls { width: 550px; background: var(--bg-painel); border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.05); z-index: 100; }
         .header-controls { padding: 15px 20px; border-bottom: 1px solid #eee; background: #fafafa; }
         .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
         
@@ -32,7 +32,7 @@
         #subtitulo { font-size: 32px; font-weight: 300; margin: 10px 0; }
         
         #produto-img-container { position: absolute; top: 350px; left: 50%; transform: translateX(-50%); width: 750px; height: 750px; display: flex; align-items: center; justify-content: center; z-index: 5; }
-        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center center; }
+        #produto-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
         #bloco-informativo { 
             position: absolute; top: 50%; right: 80px; transform: translateY(-50%); 
@@ -51,24 +51,24 @@
         .step { display: none; }
         .step.active { display: block; }
         .edit-group { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
-        .edit-group h4 { margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 5px; color: var(--cor-boticario); }
-        .control-row { margin-bottom: 12px; font-size: 12px; font-weight: bold; color: #444; }
-        input[type="range"] { width: 100%; margin-top: 5px; cursor: pointer; }
+        .edit-group h4 { margin: 0 0 10px 0; font-size: 14px; color: var(--cor-boticario); }
+        .control-row { margin-bottom: 12px; font-size: 12px; font-weight: bold; }
+        input[type="range"] { width: 100%; cursor: pointer; }
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; }
         .btn-primary { background: var(--cor-boticario); color: white; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        td { padding: 8px 4px; border-bottom: 1px solid #eee; }
-        .view-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .url-input { width: 100%; font-size: 10px; margin-top: 4px; border: 1px solid #ccc; padding: 3px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+        td, th { padding: 6px; border-bottom: 1px solid #eee; text-align: left; }
+        .badge-memory { background: #e67e22; color: white; padding: 2px 4px; border-radius: 3px; font-size: 9px; }
+        .url-input { width: 100%; font-size: 10px; border: 1px solid #ccc; padding: 3px; margin-top: 3px; }
     </style>
 </head>
 <body>
 
     <div id="controls">
         <div class="header-controls">
-            <h2 style="margin:0; color:var(--cor-boticario);">Gerador Ciclo 2</h2>
-            <small id="status-card">Nenhum card selecionado</small>
+            <h2 style="margin:0; color:var(--cor-boticario);">Gerador com Memória de SKU</h2>
+            <button onclick="limparMemoria()" style="font-size: 10px; background: none; border: none; color: red; cursor: pointer; text-decoration: underline;">Limpar Memória de Imagens</button>
         </div>
         
         <div class="scroll-content">
@@ -79,30 +79,15 @@
 
             <div id="step-2" class="step">
                 <div class="edit-group">
-                    <h4>Exportação</h4>
-                    <select id="export-format" style="width:100%; padding:8px; margin-bottom:10px;">
-                        <option value="pdf">PDF Único</option>
-                        <option value="png">Imagens ZIP (PNG)</option>
-                    </select>
-                    <button class="btn btn-primary" id="btn-download" onclick="baixarArquivos()">GERAR E BAIXAR TUDO</button>
-                    <button class="btn" style="background:#f0f0f0;" onclick="location.reload()">Trocar Planilha</button>
-                </div>
-
-                <div class="edit-group">
-                    <h4 style="color: #e67e22;">Ajustes Individuais (Deste Card)</h4>
-                    <div class="control-row">Zoom Imagem: <input type="range" id="zoom-img" min="0.1" max="3" step="0.05" value="1" oninput="aplicarAjustes()"></div>
+                    <h4>Ajustes Individuais</h4>
+                    <div class="control-row">Zoom: <input type="range" id="zoom-img" min="0.1" max="3" step="0.05" value="1" oninput="aplicarAjustes()"></div>
                     <div class="control-row">Posição X: <input type="range" id="posX-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
                     <div class="control-row">Posição Y: <input type="range" id="posY-img" min="-500" max="500" value="0" oninput="aplicarAjustes()"></div>
-                </div>
-
-                <div class="edit-group">
-                    <h4>Ajustes Globais (Para Todos)</h4>
-                    <div class="control-row">Altura Título: <input type="range" id="posY-titulo" min="10" max="400" value="120" oninput="aplicarAjustes()"></div>
-                    <div class="control-row">X do Preço: <input type="range" id="posX-bloco" min="-600" max="100" value="0" oninput="aplicarAjustes()"></div>
+                    <button class="btn btn-primary" onclick="baixarArquivos()">GERAR E BAIXAR TUDO</button>
                 </div>
 
                 <table id="data-table">
-                    <thead><tr><th>SKU</th><th>Foto / Link</th><th>Ver</th></tr></thead>
+                    <thead><tr><th>SKU</th><th>Imagem</th><th>Status</th><th>Ver</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -113,15 +98,15 @@
         <div id="render-wrap" style="transform: scale(0.35);">
             <div id="card-canvas">
                 <div id="header-area">
-                    <p id="titulo-principal">TÍTULO</p>
-                    <p id="subtitulo">SUBTÍTULO</p>
+                    <p id="titulo-principal"></p>
+                    <p id="subtitulo"></p>
                 </div>
                 <div id="produto-img-container"><img id="produto-img" crossOrigin="anonymous" src=""></div>
                 <div id="bloco-informativo">
                     <div style="font-size: 20px; font-weight: bold;">COMPRE POR:</div>
                     <div id="display-compre"><span>R$</span>00,00</div>
-                    <div id="display-venda">Venda por: R$ 00,00</div>
-                    <div id="info-detalhes"><span id="display-sku">00000</span> | <span id="display-nome">PRODUTO</span></div>
+                    <div id="display-venda"></div>
+                    <div id="info-detalhes"><span id="display-sku"></span> | <span id="display-nome"></span></div>
                 </div>
                 <div id="texto-legal"></div>
             </div>
@@ -133,18 +118,22 @@
         let planilha = [];
         let currentCardIndex = 0;
 
+        // Carrega o banco de SKUs do navegador (LocalStorage)
+        let memoriaSKU = JSON.parse(localStorage.getItem('banco_imagens_sku') || '{}');
+
         document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
                 header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    // Inicializa cada item com seus próprios ajustes
-                    planilha = results.data.map(item => ({
-                        ...item,
-                        imgData: '',
-                        zoom: 1,
-                        posX: 0,
-                        posY: 0
-                    }));
+                    planilha = results.data.map(item => {
+                        const sku = item['SKU'] ? item['SKU'].trim() : '';
+                        return {
+                            ...item,
+                            imgData: memoriaSKU[sku] || '', // Busca na memória se o SKU já existe
+                            zoom: 1, posX: 0, posY: 0,
+                            fromMemory: !!memoriaSKU[sku]
+                        };
+                    });
                     renderTabela();
                     document.getElementById('step-1').classList.remove('active');
                     document.getElementById('step-2').classList.add('active');
@@ -159,43 +148,57 @@
             planilha.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row['SKU'] || index}</td>
+                    <td><b>${row['SKU']}</b></td>
                     <td>
-                        <input type="file" onchange="carregarArquivo(event, ${index})">
-                        <input type="text" class="url-input" placeholder="Ou link URL" onchange="carregarURL(this.value, ${index})">
+                        <input type="file" style="width:70px" onchange="carregarArquivo(event, ${index})">
+                        <input type="text" class="url-input" placeholder="Link URL" onchange="carregarURL(this.value, ${index})">
                     </td>
-                    <td><button class="view-btn" onclick="atualizarCard(${index})">👁️</button></td>
+                    <td id="status-${index}">${row.fromMemory ? '<span class="badge-memory">Na Memória</span>' : 'Vazio'}</td>
+                    <td><button onclick="atualizarCard(${index})">👁️</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
+        function salvarNaMemoria(sku, data) {
+            if(!sku) return;
+            memoriaSKU[sku] = data;
+            localStorage.setItem('banco_imagens_sku', JSON.stringify(memoriaSKU));
+        }
+
         function carregarArquivo(event, index) {
             const reader = new FileReader();
-            reader.onload = (e) => { planilha[index].imgData = e.target.result; atualizarCard(index); };
+            reader.onload = (e) => { 
+                const data = e.target.result;
+                planilha[index].imgData = data;
+                planilha[index].fromMemory = false;
+                salvarNaMemoria(planilha[index]['SKU'], data);
+                document.getElementById(`status-${index}`).innerHTML = "✅ Atualizado";
+                atualizarCard(index); 
+            };
             reader.readAsDataURL(event.target.files[0]);
         }
 
         function carregarURL(url, index) {
-            if(url.trim()){ planilha[index].imgData = url.trim(); atualizarCard(index); }
+            if(url.trim()){ 
+                planilha[index].imgData = url.trim();
+                salvarNaMemoria(planilha[index]['SKU'], url.trim());
+                document.getElementById(`status-${index}`).innerHTML = "✅ Link Salvo";
+                atualizarCard(index); 
+            }
         }
 
         function atualizarCard(index) {
             currentCardIndex = index;
             const item = planilha[index];
-            
-            // Atualiza textos
-            document.getElementById('status-card').innerText = `Editando SKU: ${item['SKU'] || index}`;
             document.getElementById('titulo-principal').innerText = item['Título Principal'] || '';
             document.getElementById('subtitulo').innerText = item['SUBTÍTULO'] || '';
-            let compreVal = (item['COMPRE POR'] || '0,00').replace('R$', '').trim();
-            document.getElementById('display-compre').innerHTML = `<span>R$</span>${compreVal}`;
-            document.getElementById('display-venda').innerText = `Venda por: ${item['VENDA POR'] || 'R$ 0,00'}`;
+            document.getElementById('display-compre').innerHTML = `<span>R$</span>${(item['COMPRE POR'] || '0,00').replace('R$', '').trim()}`;
+            document.getElementById('display-venda').innerText = `Venda por: ${item['VENDA POR'] || ''}`;
             document.getElementById('display-sku').innerText = item['SKU'] || '';
             document.getElementById('display-nome').innerText = item['Nome do Produto'] || '';
             document.getElementById('texto-legal').innerText = item['(TEXTO LEGAL) Colocar no rodapé'] || '';
 
-            // Sincroniza Sliders com os valores salvos deste item
             document.getElementById('zoom-img').value = item.zoom;
             document.getElementById('posX-img').value = item.posX;
             document.getElementById('posY-img').value = item.posY;
@@ -203,73 +206,45 @@
             const img = document.getElementById('produto-img');
             img.src = item.imgData || '';
             img.style.display = item.imgData ? 'block' : 'none';
-            
-            aplicarAjustes(false); // aplica sem salvar por cima imediatamente
+            aplicarAjustes(false);
         }
 
         function aplicarAjustes(salvar = true) {
             const item = planilha[currentCardIndex];
-            
             if (salvar) {
-                // Salva os valores atuais no objeto do item
                 item.zoom = document.getElementById('zoom-img').value;
                 item.posX = document.getElementById('posX-img').value;
                 item.posY = document.getElementById('posY-img').value;
             }
+            document.getElementById('produto-img').style.transform = `scale(${item.zoom}) translate(${item.posX}px, ${item.posY}px)`;
+        }
 
-            // Aplicar Estilos Visuais
-            document.getElementById('header-area').style.top = document.getElementById('posY-titulo').value + "px";
-            
-            const img = document.getElementById('produto-img');
-            img.style.transform = `scale(${item.zoom}) translate(${item.posX}px, ${item.posY}px)`;
-            
-            const bx = document.getElementById('posX-bloco').value;
-            document.getElementById('bloco-informativo').style.transform = `translate(${bx}px, -50%)`;
+        function limparMemoria() {
+            if(confirm("Isso apagará todas as imagens que o site 'lembrou'. Deseja continuar?")) {
+                localStorage.removeItem('banco_imagens_sku');
+                location.reload();
+            }
         }
 
         async function baixarArquivos() {
-            const format = document.getElementById('export-format').value;
-            const btn = document.getElementById('btn-download');
             const wrap = document.getElementById('render-wrap');
             const card = document.getElementById('card-canvas');
-            
-            btn.innerText = "⏳ GERANDO...";
-            btn.disabled = true;
             const originalTransform = wrap.style.transform;
             wrap.style.transform = "none"; 
-
-            let pdf; let zip;
-            if (format === 'pdf') pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1350] });
-            else zip = new JSZip();
+            const zip = new JSZip();
 
             for (let i = 0; i < planilha.length; i++) {
-                atualizarCard(i); // Isso já carrega a posição salva de cada um
-                await new Promise(r => setTimeout(r, 700)); 
-
-                const canvas = await html2canvas(card, { 
-                    scale: 1, useCORS: true, width: 1080, height: 1350, logging: false
-                });
-
-                if (format === 'pdf') {
-                    const imgData = canvas.toDataURL("image/jpeg", 0.95);
-                    if (i > 0) pdf.addPage([1080, 1350], 'p');
-                    pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1350);
-                } else {
-                    const imgData = canvas.toDataURL("image/png").split(',')[1];
-                    zip.file(`card_${planilha[i].SKU || i}.png`, imgData, {base64: true});
-                }
+                atualizarCard(i);
+                await new Promise(r => setTimeout(r, 600)); 
+                const canvas = await html2canvas(card, { scale: 1, useCORS: true, width: 1080, height: 1350 });
+                const imgData = canvas.toDataURL("image/png").split(',')[1];
+                zip.file(`card_${planilha[i].SKU}.png`, imgData, {base64: true});
             }
 
             wrap.style.transform = originalTransform;
-            if (format === 'pdf') pdf.save("Cards_Ajustados.pdf");
-            else {
-                const content = await zip.generateAsync({type:"blob"});
-                saveAs(content, "Cards_Ajustados.zip");
-            }
-            btn.innerText = "GERAR E BAIXAR TUDO";
-            btn.disabled = false;
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, "Cards_Ciclo_Memoria.zip");
         }
     </script>
 </body>
 </html>
-
